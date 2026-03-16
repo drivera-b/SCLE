@@ -12,3 +12,4 @@ experiments/
 exports/
 *.log
 *.zip
+.idea/

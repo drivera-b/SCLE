@@ -45,6 +45,7 @@ def main() -> int:
     except ModuleNotFoundError:
         print("Streamlit is not installed in this interpreter.")
         print("In PyCharm: Python Packages -> install from requirements.txt")
+        print("If needed, install Streamlit directly from Python Packages and rerun.")
         return 1
 
     os.chdir(project_dir)

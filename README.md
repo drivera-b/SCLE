@@ -32,6 +32,8 @@ SLCE is a Python + Streamlit app that demonstrates **health/lifestyle risk plann
 pip install -r requirements.txt
 ```
 
+This installs the core SLCE app dependencies only (recommended for reliability).
+
 ## Windows (No Terminal Needed)
 If you cannot use terminal on the Windows laptop:
 
@@ -63,6 +65,11 @@ streamlit run app.py
 ## NiceGUI Dashboard POC (optional)
 This repo includes a side-by-side UI experiment using NiceGUI so you can compare app feel.
 
+Install optional UI dependencies first:
+```bash
+pip install -r requirements_optional_ui.txt
+```
+
 Run:
 ```bash
 python3 nicegui_poc.py
@@ -72,6 +79,11 @@ Then open the local URL shown in terminal (typically `http://localhost:8080`).
 
 ## Reflex Dashboard POC (optional)
 This repo also includes a side-by-side Reflex prototype without changing the Streamlit app.
+
+Install optional UI dependencies first:
+```bash
+pip install -r requirements_optional_ui.txt
+```
 
 Run:
 ```bash

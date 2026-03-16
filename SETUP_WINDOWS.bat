@@ -23,7 +23,11 @@ echo Installing dependencies...
 python -m pip install --upgrade pip
 if errorlevel 1 goto :fail
 python -m pip install -r requirements.txt
-if errorlevel 1 goto :fail
+if errorlevel 1 (
+  echo Core requirements install failed. Trying fallback package install...
+  python -m pip install streamlit numpy pandas scikit-learn matplotlib joblib
+  if errorlevel 1 goto :fail
+)
 
 if not exist "models\baseline_model.joblib" (
   echo Baseline model missing. Training a fallback model...
