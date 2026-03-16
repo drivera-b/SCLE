@@ -31,7 +31,28 @@ if errorlevel 1 (
 )
 
 echo.
-echo [SLCE] Starting app at http://localhost:8501
+echo [SLCE] Launching app...
 echo Keep this window open while presenting.
 echo.
-python -m streamlit run app.py
+
+call :run_streamlit 8501
+if errorlevel 1 (
+  echo.
+  echo Port 8501 failed. Retrying on port 8502...
+  call :run_streamlit 8502
+  if errorlevel 1 (
+    echo.
+    echo SLCE could not start. Please keep this window and share this error output.
+    pause
+    exit /b 1
+  )
+)
+exit /b 0
+
+:run_streamlit
+set "SLCE_PORT=%~1"
+echo Opening http://127.0.0.1:%SLCE_PORT%
+start "" "http://127.0.0.1:%SLCE_PORT%"
+python -m streamlit run app.py --server.address 127.0.0.1 --server.port %SLCE_PORT% --browser.gatherUsageStats false
+if errorlevel 1 exit /b 1
+exit /b 0

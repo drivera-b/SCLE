@@ -41,7 +41,7 @@ If you cannot use terminal on the Windows laptop:
 
 Notes:
 - Keep the launcher window open while presenting.
-- The app opens at `http://localhost:8501`.
+- The app opens at `http://127.0.0.1:8501` (or `8502` if 8501 is busy).
 
 ## Run the app
 ```bash
