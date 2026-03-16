@@ -1,0 +1,14 @@
+.web
+*.db
+.states
+assets/external/
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+venv/
+env/
+experiments/
+exports/
+*.log
+*.zip
