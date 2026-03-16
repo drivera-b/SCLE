@@ -44,6 +44,17 @@ Notes:
 - The app opens at `http://127.0.0.1:8501` (or `8502` if 8501 is busy).
 - Wait for the launcher to print the `Local URL` line before opening the browser.
 
+## PyCharm Launch (No Terminal)
+If you have PyCharm and Python already installed, this is often the easiest path:
+
+1. Open the project folder in PyCharm.
+2. Set the project interpreter (Python 3.10+).
+3. Install dependencies from `requirements.txt` using PyCharm's Python Packages UI.
+4. Open `RUN_SLCE_PYCHARM.py`.
+5. Click the green Run button.
+
+The launcher auto-selects port `8501`/`8502`/`8503` and opens the app URL on `127.0.0.1`.
+
 ## Run the app
 ```bash
 streamlit run app.py
