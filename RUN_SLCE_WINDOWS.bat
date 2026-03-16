@@ -33,6 +33,7 @@ if errorlevel 1 (
 echo.
 echo [SLCE] Launching app...
 echo Keep this window open while presenting.
+echo Wait for the line that says "Local URL" before opening the browser.
 echo.
 
 call :run_streamlit 8501
@@ -47,12 +48,15 @@ if errorlevel 1 (
     exit /b 1
   )
 )
+echo.
+echo [SLCE] App stopped.
+pause
 exit /b 0
 
 :run_streamlit
 set "SLCE_PORT=%~1"
-echo Opening http://127.0.0.1:%SLCE_PORT%
-start "" "http://127.0.0.1:%SLCE_PORT%"
-python -m streamlit run app.py --server.address 127.0.0.1 --server.port %SLCE_PORT% --browser.gatherUsageStats false
+echo Open this URL in your browser after startup:
+echo http://127.0.0.1:%SLCE_PORT%
+python -m streamlit run app.py --server.address 127.0.0.1 --server.port %SLCE_PORT% --server.headless true --browser.serverAddress 127.0.0.1 --browser.serverPort %SLCE_PORT% --browser.gatherUsageStats false
 if errorlevel 1 exit /b 1
 exit /b 0
