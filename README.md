@@ -32,6 +32,17 @@ SLCE is a Python + Streamlit app that demonstrates **health/lifestyle risk plann
 pip install -r requirements.txt
 ```
 
+## Windows (No Terminal Needed)
+If you cannot use terminal on the Windows laptop:
+
+1. Download this repo as ZIP from GitHub and extract it.
+2. Double-click `SETUP_WINDOWS.bat` once.
+3. After setup finishes, double-click `RUN_SLCE_WINDOWS.bat` to launch the app.
+
+Notes:
+- Keep the launcher window open while presenting.
+- The app opens at `http://localhost:8501`.
+
 ## Run the app
 ```bash
 streamlit run app.py
