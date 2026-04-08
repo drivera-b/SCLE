@@ -8,6 +8,17 @@ SLCE is a Python + Streamlit app that demonstrates **health/lifestyle risk plann
 ## Safety
 **Educational tool only. Not medical advice or diagnosis.**
 
+## District Handoff (Read First)
+If teammates are presenting without you, use this priority order:
+
+1. Personal laptop + PyCharm launcher (`RUN_SLCE_PYCHARM.py`) for best reliability.
+2. Windows batch launchers (`SETUP_WINDOWS.bat`, `RUN_SLCE_WINDOWS.bat`).
+3. Streamlit Cloud backup URL for school-managed computers that block localhost.
+
+Full handoff guide:
+- `STEM_EXPO_DOCS/district_presenter_runbook.md`
+- `STEM_EXPO_DOCS/streamlit_cloud_backup.md`
+
 ## Features
 - Streamlit app with 3 pages:
   - `Dashboard`
@@ -26,6 +37,14 @@ SLCE is a Python + Streamlit app that demonstrates **health/lifestyle risk plann
 - `models/` - saved baseline model + metadata
 - `tests/` - unit tests
 - `STEM_EXPO_DOCS/` - expo support docs
+
+## Teammate Quick Start (Recommended)
+
+1. Download repo ZIP from GitHub and extract it.
+2. Open in PyCharm.
+3. Use Python 3.10 or 3.11 as interpreter.
+4. Install from `requirements.txt`.
+5. Run `RUN_SLCE_PYCHARM.py` using the green Run button.
 
 ## Setup
 ```bash
