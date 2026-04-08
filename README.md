@@ -12,8 +12,9 @@ SLCE is a Python + Streamlit app that demonstrates **health/lifestyle risk plann
 If teammates are presenting without you, use this priority order:
 
 1. Personal laptop + PyCharm launcher (`RUN_SLCE_PYCHARM.py`) for best reliability.
-2. Windows batch launchers (`SETUP_WINDOWS.bat`, `RUN_SLCE_WINDOWS.bat`).
-3. Streamlit Cloud backup URL for school-managed computers that block localhost.
+2. macOS double-click launchers (`SETUP_MAC.command`, `RUN_SLCE_MAC.command`).
+3. Windows batch launchers (`SETUP_WINDOWS.bat`, `RUN_SLCE_WINDOWS.bat`).
+4. Streamlit Cloud backup URL for school-managed computers that block localhost.
 
 Full handoff guide:
 - `STEM_EXPO_DOCS/district_presenter_runbook.md`
@@ -64,6 +65,18 @@ Notes:
 - Keep the launcher window open while presenting.
 - The app opens at `http://127.0.0.1:8501` (or `8502` if 8501 is busy).
 - Wait for the launcher to print the `Local URL` line before opening the browser.
+
+## macOS (No Terminal Typing)
+If teammates are on a Mac, they can use double-click launchers:
+
+1. Download repo ZIP from GitHub and extract it.
+2. Double-click `SETUP_MAC.command` once.
+3. Double-click `RUN_SLCE_MAC.command` to start the app.
+
+Notes:
+- Keep the terminal window open while presenting.
+- If macOS shows a security warning, open `System Settings -> Privacy & Security` and click **Open Anyway** for the launcher file.
+- App URL is `http://127.0.0.1:8501` (or `8502` fallback).
 
 ## PyCharm Launch (No Terminal)
 If you have PyCharm and Python already installed, this is often the easiest path:

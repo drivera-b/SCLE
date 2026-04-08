@@ -6,8 +6,9 @@ This guide is for teammates presenting SLCE when the original developer is not p
 Use this order of preference:
 
 1. Personal laptop (recommended) using PyCharm and `RUN_SLCE_PYCHARM.py`.
-2. Windows local launch using `SETUP_WINDOWS.bat` and `RUN_SLCE_WINDOWS.bat`.
-3. Streamlit Community Cloud backup URL (no local install).
+2. macOS launcher scripts using `SETUP_MAC.command` and `RUN_SLCE_MAC.command`.
+3. Windows local launch using `SETUP_WINDOWS.bat` and `RUN_SLCE_WINDOWS.bat`.
+4. Streamlit Community Cloud backup URL (no local install).
 
 School-managed computers may block local servers (`127.0.0.1`) by policy.
 
@@ -38,13 +39,23 @@ School-managed computers may block local servers (`127.0.0.1`) by policy.
 3. Wait for the `Local URL` line.
 4. Open `http://127.0.0.1:8501` or `http://127.0.0.1:8502`.
 
-## 5) Fast Troubleshooting
+## 5) macOS Quick Start (No Terminal Typing)
+
+1. Double-click `SETUP_MAC.command`.
+2. Double-click `RUN_SLCE_MAC.command`.
+3. Keep terminal window open while presenting.
+
+## 6) Fast Troubleshooting
 
 ### Browser says "can't reach this page" on 127.0.0.1
 - Keep launcher/PyCharm run process open.
 - Wait for `Local URL` message.
 - Disable Proxy and VPN on Windows.
 - Allow Python through firewall if prompted.
+
+### macOS blocks `.command` file
+- Right-click the launcher and choose `Open`.
+- If blocked again, go to `System Settings -> Privacy & Security` and click `Open Anyway`.
 
 ### Install fails in PyCharm
 - Use Python 3.10 or 3.11 interpreter.
@@ -54,7 +65,7 @@ School-managed computers may block local servers (`127.0.0.1`) by policy.
 ### School laptop still blocks localhost
 - Use Streamlit Cloud backup deployment and present from a web URL.
 
-## 6) Demo Flow (3 Minutes)
+## 7) Demo Flow (3 Minutes)
 
 1. Dashboard:
    - Choose `High Stress Student`
@@ -68,7 +79,7 @@ School-managed computers may block local servers (`127.0.0.1`) by policy.
    - Enter improved week values
    - Show before/after personalization weights
 
-## 7) Safety Statement
+## 8) Safety Statement
 
 Always state:
 
