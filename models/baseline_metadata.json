@@ -17,40 +17,39 @@
     "thal"
   ],
   "metrics": {
-    "accuracy": 0.8,
-    "roc_auc": 0.78,
+    "accuracy": 0.868421052631579,
+    "roc_auc": 0.9310104529616725,
     "confusion_matrix": [
       [
-        32,
-        3
+        35,
+        6
       ],
       [
-        6,
-        4
+        4,
+        31
       ]
     ],
-    "train_size": 135,
-    "test_size": 45
+    "train_size": 227,
+    "test_size": 76
   },
-  "trained_at_utc": "2026-03-16T17:15:07.632142+00:00",
+  "trained_at_utc": "2026-05-18T01:44:02.916339+00:00",
   "dataset_source": {
-    "source": "demo_sample",
-    "path": "/Users/danielrivera/Documents/New project/data/demo_sample.csv",
-    "message": "Using demo_sample.csv because UCI data was unavailable (<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)>)."
+    "source": "local_heart_csv",
+    "path": "/Users/danielrivera/Documents/New project/data/heart.csv"
   },
   "feature_medians": {
-    "age": 53.5,
+    "age": 56.0,
     "sex": 1.0,
-    "cp": 2.0,
+    "cp": 3.0,
     "trestbps": 130.0,
-    "chol": 239.0,
+    "chol": 241.0,
     "fbs": 0.0,
     "restecg": 1.0,
-    "thalach": 164.0,
+    "thalach": 153.0,
     "exang": 0.0,
-    "oldpeak": 1.25,
-    "slope": 1.0,
-    "ca": 2.0,
-    "thal": 6.0
+    "oldpeak": 0.8,
+    "slope": 2.0,
+    "ca": 0.0,
+    "thal": 3.0
   }
 }

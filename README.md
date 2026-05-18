@@ -8,6 +8,13 @@ SLCE is a Python + Streamlit app that demonstrates **health/lifestyle risk plann
 ## Safety
 **Educational tool only. Not medical advice or diagnosis.**
 
+## Will It Run From GitHub?
+Yes. This repo is set up to run out-of-the-box for new users:
+
+- Includes a real heart dataset at `data/heart.csv` (UCI Cleveland format, cleaned).
+- Includes fallback `data/demo_sample.csv` if real data is unavailable.
+- Includes trained model artifacts in `models/` for fast first launch.
+
 ## District Handoff (Read First)
 If teammates are presenting without you, use this priority order:
 
@@ -34,7 +41,7 @@ Full handoff guide:
 ## Project Structure
 - `app.py` - Streamlit UI
 - `src/` - core modules
-- `data/` - dataset cache and demo fallback sample
+- `data/` - includes `heart.csv` (real dataset) and `demo_sample.csv` (fallback)
 - `models/` - saved baseline model + metadata
 - `tests/` - unit tests
 - `STEM_EXPO_DOCS/` - expo support docs
@@ -133,9 +140,14 @@ python -m src.baseline_model --train
 ```
 
 Notes:
-- The code attempts to download the UCI Heart Disease dataset automatically.
-- If download fails, place a compatible CSV at `data/heart.csv`.
-- The app can still run using `data/demo_sample.csv` fallback.
+- The repo already includes `data/heart.csv` so training works even without internet.
+- If `data/heart.csv` is removed, the code attempts UCI download automatically.
+- If download fails, the app still runs with `data/demo_sample.csv` fallback.
+
+## Dataset Source (for Judges)
+- Source: UCI Heart Disease (Cleveland subset), DOI `10.24432/C52P4X`
+- License: CC BY 4.0
+- Dataset used by app/training: `data/heart.csv`
 
 ## Demo Mode (Reliable Expo Use)
 Use the built-in demo profiles:
