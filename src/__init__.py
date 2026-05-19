@@ -1,2 +1,1 @@
-"""VITA STEM Expo project package."""
-
+"""SLCE STEM Expo project package."""

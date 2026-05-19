@@ -155,7 +155,7 @@ def train_baseline_model(
 
     medians = {feature: float(df[feature].median(skipna=True)) for feature in MODEL_FEATURES}
     metadata = {
-        "project": "VITA",
+        "project": "SLCE",
         "model_type": "logistic_regression",
         "features": MODEL_FEATURES,
         "metrics": metrics,
@@ -300,7 +300,7 @@ def _print_metrics(metadata: dict[str, Any] | None) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Train or inspect the VITA baseline model.")
+    parser = argparse.ArgumentParser(description="Train or inspect the SLCE baseline model.")
     parser.add_argument("--train", action="store_true", help="Train and save the baseline model artifacts.")
     parser.add_argument("--no-download", action="store_true", help="Do not attempt dataset download.")
     args = parser.parse_args(argv)

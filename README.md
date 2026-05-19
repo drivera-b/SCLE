@@ -1,179 +1,91 @@
-# SLCE (STEM Expo Computer Science Entry)
+# SLCE: Stochastic Lifestyle Control Engine
 
-SLCE is a Python + Streamlit app that demonstrates **health/lifestyle risk planning under uncertainty** using a two-layer approach:
+SLCE is a decision-support app that combines supervised learning, stochastic simulation, and constrained optimization to estimate long-term health risk under uncertainty.
 
-1. **Layer 1 (Baseline ML):** logistic regression trained on a real public heart disease dataset (UCI Heart Disease when available).
-2. **Layer 2 (Stochastic Simulation):** a Monte Carlo model simulates many possible health trajectories over time and evaluates habit plans under constraints.
+This repository is intentionally packaged for reliable first-run behavior on new machines and live demos.
 
-## Safety
-**Educational tool only. Not medical advice or diagnosis.**
+## Quant/Engineering Highlights
+- Two-layer modeling system with baseline ML plus stochastic state simulation
+- Baseline risk model from real public data (`LogisticRegression` on UCI Cleveland heart dataset features)
+- Weekly stochastic state model (`H_t`) with Monte Carlo uncertainty propagation
+- Constrained plan optimization with explicit objective and feasibility rules
+- Adaptive personalization from weekly logs (weight updates based on observed trend direction)
+- Defensive runtime design with input validation, clamping, and fallback logic
+- Graceful fallback to local demo data/model paths
+- Cached model/dataset status and friendly error messaging
+- Verified test suite (`pytest`) for core validation and stochastic logic
 
-## Will It Run From GitHub?
-Yes. This repo is set up to run out-of-the-box for new users:
+## Modeling Overview
+- Latent health state update (weekly):
+`H_{t+1} = clamp(H_t + drift(features, plan) + noise, 0, 100)`
+- Weekly risk mapping:
+`p_t = sigmoid(alpha + beta * (100 - H_t)/100 + baseline_logit)`
+- Optimizer objective:
+`objective = expected_mean_risk + lambda_time * time_cost - lambda_adherence * adherence_score`
 
-- Includes a real heart dataset at `data/heart.csv` (UCI Cleveland format, cleaned).
-- Includes fallback `data/demo_sample.csv` if real data is unavailable.
-- Includes trained model artifacts in `models/` for fast first launch.
+## Data and Artifacts
+- Real dataset included: `/data/heart.csv` (UCI Cleveland format, cleaned, 303 rows)
+- Fallback dataset: `/data/demo_sample.csv`
+- Pretrained baseline artifacts: `/models/baseline_model.joblib`, `/models/baseline_metadata.json`
 
-## District Handoff (Read First)
-If teammates are presenting without you, use this priority order:
+Current baseline holdout metrics (from metadata):
+- Accuracy: `0.8684`
+- ROC-AUC: `0.9310`
+- Confusion matrix: `[[35, 6], [4, 31]]`
 
-1. Personal laptop + PyCharm launcher (`RUN_SLCE_PYCHARM.py`) for best reliability.
-2. macOS double-click launchers (`SETUP_MAC.command`, `RUN_SLCE_MAC.command`).
-3. Windows batch launchers (`SETUP_WINDOWS.bat`, `RUN_SLCE_WINDOWS.bat`).
-4. Streamlit Cloud backup URL for school-managed computers that block localhost.
+## Quick Start (No Terminal Required)
 
-Full handoff guide:
-- `STEM_EXPO_DOCS/district_presenter_runbook.md`
-- `STEM_EXPO_DOCS/streamlit_cloud_backup.md`
+### macOS
+1. Download ZIP from GitHub and extract.
+2. Double-click `/SETUP_MAC.command` (first time only).
+3. Double-click `/RUN_SLCE_MAC.command`.
 
-## Features
-- Streamlit app with 3 pages:
-  - `Dashboard`
-  - `Optimize Plan`
-  - `Weekly Log`
-- Monte Carlo fan charts (risk + latent health state)
-- Optimization of lifestyle plans under time/ramp constraints
-- Adaptive personalization weights from weekly logs
-- Robust validation + graceful fallbacks
-- Demo profiles for reliable expo presentation
+### Windows
+1. Download ZIP from GitHub and extract.
+2. Double-click `/SETUP_WINDOWS.bat` (first time only).
+3. Double-click `/RUN_SLCE_WINDOWS.bat`.
 
-## Project Structure
-- `app.py` - Streamlit UI
-- `src/` - core modules
-- `data/` - includes `heart.csv` (real dataset) and `demo_sample.csv` (fallback)
-- `models/` - saved baseline model + metadata
-- `tests/` - unit tests
-- `STEM_EXPO_DOCS/` - expo support docs
+### PyCharm (Mac/Windows)
+1. Open project folder in PyCharm.
+2. Use Python `3.10` or `3.11` interpreter.
+3. Install from `/requirements.txt`.
+4. Run `/RUN_SLCE_PYCHARM.py`.
 
-## Teammate Quick Start (Recommended)
+If school-managed laptops block localhost (`127.0.0.1`), use the Streamlit Cloud backup flow in `/STEM_EXPO_DOCS/streamlit_cloud_backup.md`.
 
-1. Download repo ZIP from GitHub and extract it.
-2. Open in PyCharm.
-3. Use Python 3.10 or 3.11 as interpreter.
-4. Install from `requirements.txt`.
-5. Run `RUN_SLCE_PYCHARM.py` using the green Run button.
-
-## Setup
+## CLI Setup (Developer Path)
 ```bash
 pip install -r requirements.txt
-```
-
-This installs the core SLCE app dependencies only (recommended for reliability).
-
-## Windows (No Terminal Needed)
-If you cannot use terminal on the Windows laptop:
-
-1. Download this repo as ZIP from GitHub and extract it.
-2. Double-click `SETUP_WINDOWS.bat` once.
-3. After setup finishes, double-click `RUN_SLCE_WINDOWS.bat` to launch the app.
-
-Notes:
-- Keep the launcher window open while presenting.
-- The app opens at `http://127.0.0.1:8501` (or `8502` if 8501 is busy).
-- Wait for the launcher to print the `Local URL` line before opening the browser.
-
-## macOS (No Terminal Typing)
-If teammates are on a Mac, they can use double-click launchers:
-
-1. Download repo ZIP from GitHub and extract it.
-2. Double-click `SETUP_MAC.command` once.
-3. Double-click `RUN_SLCE_MAC.command` to start the app.
-
-Notes:
-- Keep the terminal window open while presenting.
-- If macOS shows a security warning, open `System Settings -> Privacy & Security` and click **Open Anyway** for the launcher file.
-- App URL is `http://127.0.0.1:8501` (or `8502` fallback).
-
-## PyCharm Launch (No Terminal)
-If you have PyCharm and Python already installed, this is often the easiest path:
-
-1. Open the project folder in PyCharm.
-2. Set the project interpreter (Python 3.10+).
-3. Install dependencies from `requirements.txt` using PyCharm's Python Packages UI.
-4. Open `RUN_SLCE_PYCHARM.py`.
-5. Click the green Run button.
-
-The launcher auto-selects port `8501`/`8502`/`8503` and opens the app URL on `127.0.0.1`.
-
-## Run the app
-```bash
 streamlit run app.py
 ```
 
-## NiceGUI Dashboard POC (optional)
-This repo includes a side-by-side UI experiment using NiceGUI so you can compare app feel.
-
-Install optional UI dependencies first:
-```bash
-pip install -r requirements_optional_ui.txt
-```
-
-Run:
-```bash
-python3 nicegui_poc.py
-```
-
-Then open the local URL shown in terminal (typically `http://localhost:8080`).
-
-## Reflex Dashboard POC (optional)
-This repo also includes a side-by-side Reflex prototype without changing the Streamlit app.
-
-Install optional UI dependencies first:
-```bash
-pip install -r requirements_optional_ui.txt
-```
-
-Run:
-```bash
-reflex run
-```
-
-If port 3000/8000 is busy:
-```bash
-reflex run --frontend-port 3001 --backend-port 8001
-```
-
-## Train/retrain the baseline ML model
+## Reproducibility Commands
+Train/retrain baseline model:
 ```bash
 python -m src.baseline_model --train
 ```
 
-Notes:
-- The repo already includes `data/heart.csv` so training works even without internet.
-- If `data/heart.csv` is removed, the code attempts UCI download automatically.
-- If download fails, the app still runs with `data/demo_sample.csv` fallback.
-
-## Dataset Source (for Judges)
-- Source: UCI Heart Disease (Cleveland subset), DOI `10.24432/C52P4X`
-- License: CC BY 4.0
-- Dataset used by app/training: `data/heart.csv`
-
-## Demo Mode (Reliable Expo Use)
-Use the built-in demo profiles:
-- `Balanced Student`
-- `High Stress Student`
-- `Inconsistent Sleeper`
-
-Suggested live demo flow:
-1. Open `Dashboard`, load `High Stress Student`, run simulation.
-2. Open `Optimize Plan`, find best plans under a 30-45 min/day budget.
-3. Open `Weekly Log`, enter an improved week and show weight adaptation.
-
-## What judges should notice
-- Real dataset baseline (Layer 1)
-- Uncertainty bands, not a single prediction (Layer 2 Monte Carlo)
-- Constraint-aware optimization
-- Adaptive personalization from user logs
-- Error handling and validation for live reliability
-
-## Testing
-Run unit tests:
+Run tests:
 ```bash
 pytest -q
 ```
 
-## Screenshots (placeholders)
-- `docs/screenshots/dashboard.png` (add later)
-- `docs/screenshots/optimizer.png` (add later)
-- `docs/screenshots/weekly_log.png` (add later)
+## Repository Layout
+- `/app.py` Streamlit application (Dashboard, Optimize Plan, Weekly Log)
+- `/src/` core modeling modules
+- `/data/` bundled real and fallback datasets
+- `/models/` model artifact and metadata
+- `/tests/` unit tests
+- `/STEM_EXPO_DOCS/` runbook, testing checklist, logbook, tri-board layout, data provenance
+
+## Reliability Guarantees in This Repo
+- Works without internet using bundled `/data/heart.csv` and `/models/baseline_model.joblib`
+- Auto-fallback to `/data/demo_sample.csv` if needed
+- Heuristic baseline fallback if model artifact is unavailable
+- Explicit validation and friendly user-facing failures instead of raw stack traces
+
+## Safety
+Educational tool only. Not medical advice or diagnosis.
+
+## Dataset Provenance
+See `/STEM_EXPO_DOCS/dataset_provenance.md` for source, DOI, and licensing details.

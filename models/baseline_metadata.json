@@ -1,5 +1,5 @@
 {
-  "project": "VITA",
+  "project": "SLCE",
   "model_type": "logistic_regression",
   "features": [
     "age",
@@ -32,7 +32,7 @@
     "train_size": 227,
     "test_size": 76
   },
-  "trained_at_utc": "2026-05-18T01:44:02.916339+00:00",
+  "trained_at_utc": "2026-05-19T01:45:30.922012+00:00",
   "dataset_source": {
     "source": "local_heart_csv",
     "path": "/Users/danielrivera/Documents/New project/data/heart.csv"

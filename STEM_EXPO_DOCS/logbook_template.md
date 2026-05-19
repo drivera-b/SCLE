@@ -1,7 +1,7 @@
-# VITA Logbook Template (Printable)
+# SLCE Logbook Template (Printable)
 
 ## Project Info
-- Project title: VITA (placeholder)
+- Project title: SLCE (Stochastic Lifestyle Control Engine)
 - Category: Computer Science
 - Student(s):
 - School:
@@ -53,4 +53,3 @@ For each work session:
 - What worked well:
 - What I would improve next:
 - What I learned about CS / modeling / uncertainty:
-

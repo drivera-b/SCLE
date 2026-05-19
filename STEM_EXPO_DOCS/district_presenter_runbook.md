@@ -60,7 +60,6 @@ School-managed computers may block local servers (`127.0.0.1`) by policy.
 ### Install fails in PyCharm
 - Use Python 3.10 or 3.11 interpreter.
 - Install only `requirements.txt` first.
-- Optional POC UIs use `requirements_optional_ui.txt`.
 
 ### School laptop still blocks localhost
 - Use Streamlit Cloud backup deployment and present from a web URL.

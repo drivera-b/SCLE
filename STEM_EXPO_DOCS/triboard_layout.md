@@ -1,8 +1,8 @@
-# VITA Tri-Board Layout Plan
+# SLCE Tri-Board Layout Plan
 
 ## Center Panel (Main Story)
 ### Title
-- **VITA: Lifestyle Risk Optimization Under Uncertainty**
+- **SLCE: Lifestyle Risk Optimization Under Uncertainty**
 
 ### Big Visuals
 - Dashboard screenshot (risk fan chart + health fan chart)
@@ -47,4 +47,3 @@
 - Laptop running Streamlit app
 - Printed quick-start demo script (30-60 seconds)
 - Backup screenshots and test checklist
-

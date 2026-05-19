@@ -1,2 +1,0 @@
-nicegui>=2.0
-reflex>=0.6

@@ -1,4 +1,4 @@
-# VITA STEM Expo Testing Checklist
+# SLCE STEM Expo Testing Checklist
 
 ## Pre-demo startup
 - `pip install -r requirements.txt` completes with no errors.
@@ -61,4 +61,3 @@
 - Browser zoom set to 100%.
 - Internet not required for demo mode (works with `data/demo_sample.csv`).
 - Backup screenshot(s) ready in case of venue Wi-Fi/power issues.
-
