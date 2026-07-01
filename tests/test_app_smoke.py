@@ -35,6 +35,7 @@ def test_streamlit_app_starts_without_exceptions():
     app = AppTest.from_file(str(app_path)).run(timeout=30)
 
     assert not app.exception
+    assert not any("Missing Submit Button" in warning.value for warning in app.warning)
 
 
 def test_measured_biomarker_profile_runs_end_to_end():

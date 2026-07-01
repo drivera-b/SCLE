@@ -20,6 +20,12 @@ The in-app percentile context uses NHANES examination weights. The extract also 
 
 The UCI classifier has clinical features that are not available from the lifestyle form. SLCE exposes whether each input was measured, proxy-derived, or median-imputed rather than hiding that limitation.
 
+The measured-versus-proxy comparison changes only input provenance. It is not a before/after health comparison, and its probability difference must not be interpreted as a treatment effect.
+
+## Subgroup evaluation
+
+Age- and sex-sliced metrics are based on small samples and a binary sex field from the source dataset. They identify possible performance variation but do not establish fairness, generalization, or performance for identities and populations absent from the data.
+
 ## Simulation interpretation
 
 Monte Carlo intervals quantify uncertainty under the specified model and parameter assumptions. They are not clinical prediction intervals and do not include every source of real-world uncertainty.

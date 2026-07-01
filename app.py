@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 from datetime import datetime
@@ -11,13 +12,15 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from src.baseline_model import load_baseline_artifacts, predict_baseline_risk
+from src.baseline_model import compare_biomarker_impact, load_baseline_artifacts, predict_baseline_risk
 from src.biomarkers import default_reference_path, input_evidence_summary, population_percentile_context
 from src.dataset import dataset_status_message, load_heart_dataset
+from src.lab_results import lab_csv_template, parse_lab_csv
 from src.monte_carlo import run_monte_carlo
 from src.optimizer import optimize_habit_plans
 from src.personalization import default_weights, update_personalization_weights
 from src.plots import fan_chart, risk_histogram, tradeoff_scatter
+from src.research_report import export_research_pdf
 from src.validate import validate_dashboard_inputs, validate_optimizer_constraints, validate_weekly_log
 
 
@@ -414,6 +417,7 @@ def _run_dashboard_simulation(profile: dict[str, Any], *, seed: int = 42) -> dic
         training_age_range=age_range,
     )
     population_context = population_percentile_context(profile)
+    lab_impact = compare_biomarker_impact(profile, measured_output=baseline)
     simulation = run_monte_carlo(
         profile,
         baseline,
@@ -429,6 +433,7 @@ def _run_dashboard_simulation(profile: dict[str, Any], *, seed: int = 42) -> dic
         "simulation": simulation,
         "input_evidence": evidence,
         "population_context": population_context,
+        "lab_impact": lab_impact,
         "timestamp": datetime.now().isoformat(timespec="seconds"),
     }
     st.session_state.current_profile = profile
@@ -516,6 +521,44 @@ def _render_demo_profile_picker() -> None:
     if c2.button("Load Profile", width="stretch", type="secondary"):
         _apply_demo_profile(selected)
         st.rerun()
+
+
+def _render_lab_template_download() -> None:
+    with st.expander("Lab CSV import", expanded=False):
+        st.write(
+            "Download the one-row template, replace the example values with measured results, then upload it inside Optional measured biomarkers."
+        )
+        st.download_button(
+            "Download Lab CSV Template",
+            data=lab_csv_template(),
+            file_name="slce_lab_results_template.csv",
+            mime="text/csv",
+            width="stretch",
+            help="Uses standard units: mm Hg, mg/dL, percent, and kg/m^2.",
+        )
+        uploaded_lab_file = st.file_uploader(
+            "Upload completed one-row lab CSV",
+            type=["csv"],
+            key="profile_lab_csv_upload",
+            help="Uses the SLCE template. Unsupported units and multiple rows are rejected.",
+        )
+        if uploaded_lab_file is not None:
+            payload = uploaded_lab_file.getvalue()
+            digest = hashlib.sha256(payload).hexdigest()
+            imported = parse_lab_csv(payload)
+            if imported.errors:
+                for message in imported.errors:
+                    st.error(message)
+            else:
+                if st.session_state.get("lab_upload_digest") != digest:
+                    for field, value in imported.values.items():
+                        st.session_state[f"profile_{field}"] = value
+                    st.session_state.profile_use_biomarkers = True
+                    st.session_state.lab_upload_digest = digest
+                st.success(f"Loaded {len(imported.values)} validated lab values into the controls below.")
+                for message in imported.warnings:
+                    st.warning(message)
+        st.caption("Files are processed in the running app session. Do not include names, dates of birth, or other identifiers.")
 
 
 def _render_shared_inputs() -> dict[str, Any]:
@@ -1290,6 +1333,14 @@ def _render_input_evidence(result: dict[str, Any]) -> None:
             st.caption(
                 "Percentiles use NHANES survey weights when available and describe position within an age/sex reference sample; they are not diagnoses or treatment thresholds."
             )
+        lab_impact = result.get("lab_impact")
+        if lab_impact:
+            st.markdown("**Measured labs vs. proxy/imputed baseline**")
+            impact_columns = st.columns(3)
+            impact_columns[0].metric("Measured labs", f"{lab_impact['measured_probability']:.1%}")
+            impact_columns[1].metric("Without measured labs", f"{lab_impact['proxy_probability']:.1%}")
+            impact_columns[2].metric("Input impact", f"{lab_impact['absolute_difference']:+.1%}")
+            st.caption(lab_impact["interpretation"])
 
         if _is_research_mode():
             with st.expander("Feature provenance", expanded=False):
@@ -1368,9 +1419,21 @@ def _export_dashboard_results(result: dict[str, Any]) -> Path:
             "weeks": int(result["simulation"]["weeks"]),
             "threshold": float(result["simulation"]["threshold"]),
         },
+        "input_evidence": result.get("input_evidence", {}),
+        "lab_impact": result.get("lab_impact"),
+        "population_context": result.get("population_context", []),
     }
     (export_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return export_dir
+
+
+def _export_judge_research_pdf(
+    result: dict[str, Any],
+    optimization_result: dict[str, Any] | None,
+) -> Path:
+    export_dir = _export_root() / f"research_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    destination = export_dir / "slce_research_summary.pdf"
+    return export_research_pdf(destination, result, optimization_result)
 
 
 def _export_optimizer_results(stored: dict[str, Any]) -> Path:
@@ -1434,7 +1497,7 @@ def _render_research_dashboard_details(result: dict[str, Any]) -> None:
         st.latex(r"H_{t+1}=\mathrm{clamp}(H_t + \mathrm{drift} + \mathrm{mean\ reversion} + \epsilon_t, 0, 100)")
         st.markdown(r"Noise term: $\epsilon_t \sim \mathcal{N}(0,\sigma)$, where $\sigma$ increases with stress and sleep variability.")
         st.markdown("**Risk mapping:**")
-        st.latex(r"p_t = \sigma\left(\alpha + \beta \cdot \frac{100-H_t}{100} + \text{baseline\_logit}\right)")
+        st.latex(r"p_t = \sigma\left(\text{baseline\_logit} + \beta \cdot \frac{H_0-H_t}{100}\right)")
         st.write(
             {
                 "horizon_years": result["profile"]["horizon_years"],
@@ -1512,6 +1575,7 @@ def _dashboard_page() -> None:
     _render_demo_day_notice()
     st.subheader("User Inputs")
     _render_demo_profile_picker()
+    _render_lab_template_download()
     try:
         _render_project_status()
     except Exception:
@@ -1575,6 +1639,13 @@ def _dashboard_page() -> None:
                         st.success(f"Saved to {export_path}")
                     except Exception as exc:
                         st.error(f"Export failed: {exc.__class__.__name__}")
+                if st.button("Export Research PDF", width="stretch", key="export_research_pdf"):
+                    try:
+                        export_path = _export_judge_research_pdf(result, matched_opt)
+                        st.session_state.last_export_path = str(export_path)
+                        st.success(f"Saved to {export_path}")
+                    except Exception as exc:
+                        st.error(f"PDF export failed: {exc.__class__.__name__}")
 
         st.markdown("#### Model Summary")
         st.dataframe(
@@ -1645,6 +1716,7 @@ def _optimizer_page() -> None:
     st.subheader("Constraint Inputs")
     with st.expander("Profile Used for Optimization", expanded=True):
         _render_demo_profile_picker()
+    _render_lab_template_download()
 
     with st.form("optimizer_form"):
         with st.expander("Profile Used for Optimization", expanded=True):

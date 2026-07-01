@@ -31,6 +31,14 @@ The baseline is a standardized logistic regression with median imputation. Evalu
 
 Measured systolic blood pressure, total cholesterol, and fasting glucose map to existing UCI features. Supplemental biomarkers such as HbA1c and BMI are not inserted into the classifier unless a future model is explicitly trained with those features.
 
+The optional one-row lab CSV uses explicit standard units and rejects unsupported units, nonnumeric values, out-of-range values, and multiple-person files. For transparency, the dashboard recomputes the same profile with measured labs disabled and displays the probability difference caused by replacing proxy/imputed inputs.
+
+## Evaluation design
+
+Aggregate and subgroup results use shared five-fold stratified out-of-fold predictions. Sex and age slices are evaluated after prediction so every row remains out-of-fold. Bootstrap intervals quantify sampling variability in ROC-AUC; subgroup results remain descriptive because the dataset is small.
+
+Missing-feature ablations remove selected feature groups before each fold is fitted. The resulting metric changes measure predictive dependence within UCI Cleveland, not causal importance.
+
 ## Stochastic layer
 
 The latent health state is updated weekly:

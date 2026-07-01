@@ -33,6 +33,8 @@ from src.optimizer import optimize_habit_plans
 FIGURE_DIR = project_root() / "reports" / "figures"
 METRICS_PATH = project_root() / "reports" / "research_metrics.json"
 WORKED_EXAMPLE_PATH = project_root() / "reports" / "worked_example.json"
+MODEL_CARD_PATH = project_root() / "research" / "model_card.md"
+DATA_CARD_PATH = project_root() / "research" / "data_card.md"
 
 
 def _style_axis(ax: plt.Axes) -> None:
@@ -219,6 +221,131 @@ def generate_model_benchmark() -> dict[str, object]:
             "Logistic regression remains the production baseline for interpretability and stable probability behavior; "
             "nonlinear models are reported as benchmarks rather than silently substituted."
         ),
+    }
+
+
+def _group_metrics(y: np.ndarray, probabilities: np.ndarray) -> dict[str, object]:
+    predictions = probabilities >= 0.5
+    result: dict[str, object] = {
+        "rows": int(len(y)),
+        "positive_rows": int(np.sum(y)),
+        "prevalence": float(np.mean(y)),
+        "accuracy": float(accuracy_score(y, predictions)),
+        "brier_score": float(brier_score_loss(y, probabilities)),
+        "mean_predicted_probability": float(np.mean(probabilities)),
+        "calibration_gap": float(np.mean(probabilities) - np.mean(y)),
+    }
+    if np.unique(y).size > 1:
+        result["roc_auc"] = float(roc_auc_score(y, probabilities))
+        result["roc_auc_bootstrap_95pct_ci"] = _bootstrap_interval(
+            y, probabilities, metric="roc_auc", iterations=600
+        )
+    else:
+        result["roc_auc"] = None
+        result["roc_auc_bootstrap_95pct_ci"] = None
+    return result
+
+
+def generate_subgroup_evaluation() -> dict[str, object]:
+    data, _ = load_heart_dataset(try_download=False, allow_demo_fallback=False)
+    clean = _clean_training_frame(data)
+    X = clean[MODEL_FEATURES]
+    y = clean["target"].astype(int).to_numpy()
+    folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    probabilities = cross_val_predict(build_pipeline(), X, y, cv=folds, method="predict_proba")[:, 1]
+
+    age = pd.to_numeric(clean["age"], errors="coerce")
+    sex = pd.to_numeric(clean["sex"], errors="coerce")
+    masks = {
+        "Sex: Female": sex.eq(0).to_numpy(),
+        "Sex: Male": sex.eq(1).to_numpy(),
+        "Age: 29-49": age.between(29, 49).to_numpy(),
+        "Age: 50-59": age.between(50, 59).to_numpy(),
+        "Age: 60-77": age.between(60, 77).to_numpy(),
+    }
+    groups = {name: _group_metrics(y[mask], probabilities[mask]) for name, mask in masks.items()}
+
+    labels = list(groups)
+    auc_values = [float(groups[label]["roc_auc"]) for label in labels]
+    brier_values = [float(groups[label]["brier_score"]) for label in labels]
+    colors = ["#0f766e", "#0f766e", "#b45309", "#b45309", "#b45309"]
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.0))
+    axes[0].barh(labels, auc_values, color=colors, alpha=0.88)
+    axes[0].set_xlim(0.5, 1.0)
+    axes[0].set_xlabel("Out-of-fold ROC-AUC")
+    axes[0].set_title("Discrimination by Subgroup")
+    axes[1].barh(labels, brier_values, color=colors, alpha=0.88)
+    axes[1].set_xlabel("Brier score (lower is better)")
+    axes[1].set_title("Probability Error by Subgroup")
+    for ax in axes:
+        _style_axis(ax)
+    fig.suptitle("Subgroup Evaluation (descriptive; small samples)")
+    fig.tight_layout()
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+    fig.savefig(FIGURE_DIR / "subgroup_performance.png", dpi=180, bbox_inches="tight")
+    plt.close(fig)
+    return {
+        "evaluation": "Shared five-fold out-of-fold predictions, sliced after prediction",
+        "groups": groups,
+        "warning": "Subgroup sample sizes are small; differences are descriptive and not evidence of fairness or transportability.",
+    }
+
+
+def generate_missing_feature_ablation() -> dict[str, object]:
+    data, _ = load_heart_dataset(try_download=False, allow_demo_fallback=False)
+    clean = _clean_training_frame(data)
+    X = clean[MODEL_FEATURES]
+    y = clean["target"].astype(int).to_numpy()
+    folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    ablations = {
+        "Full feature set": [],
+        "No BP/cholesterol/glucose": ["trestbps", "chol", "fbs"],
+        "No age/sex": ["age", "sex"],
+        "No exercise-test signals": ["thalach", "exang", "oldpeak"],
+        "No diagnostic categories": ["cp", "restecg", "slope", "ca", "thal"],
+    }
+    results: dict[str, dict[str, object]] = {}
+    for name, removed_features in ablations.items():
+        variant = X.drop(columns=removed_features) if removed_features else X.copy()
+        probabilities = cross_val_predict(
+            build_pipeline(), variant, y, cv=folds, method="predict_proba"
+        )[:, 1]
+        results[name] = {
+            "removed_features": removed_features,
+            "roc_auc": float(roc_auc_score(y, probabilities)),
+            "accuracy": float(accuracy_score(y, probabilities >= 0.5)),
+            "brier_score": float(brier_score_loss(y, probabilities)),
+        }
+
+    baseline_auc = float(results["Full feature set"]["roc_auc"])
+    baseline_brier = float(results["Full feature set"]["brier_score"])
+    for metrics in results.values():
+        metrics["roc_auc_change"] = float(metrics["roc_auc"]) - baseline_auc
+        metrics["brier_score_change"] = float(metrics["brier_score"]) - baseline_brier
+
+    labels = list(results)[1:]
+    auc_changes = [float(results[label]["roc_auc_change"]) for label in labels]
+    brier_changes = [float(results[label]["brier_score_change"]) for label in labels]
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.8))
+    axes[0].barh(labels, auc_changes, color="#0f766e", alpha=0.88)
+    axes[0].axvline(0.0, color="#334155", linewidth=1)
+    axes[0].set_xlabel("Change in ROC-AUC vs. full model")
+    axes[0].set_title("Discrimination Impact")
+    axes[1].barh(labels, brier_changes, color="#b45309", alpha=0.88)
+    axes[1].axvline(0.0, color="#334155", linewidth=1)
+    axes[1].set_xlabel("Change in Brier score vs. full model")
+    axes[1].set_title("Probability Error Impact")
+    for ax in axes:
+        _style_axis(ax)
+    fig.suptitle("Missing-Feature Group Ablation")
+    fig.tight_layout()
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+    fig.savefig(FIGURE_DIR / "missing_feature_ablation.png", dpi=180, bbox_inches="tight")
+    plt.close(fig)
+    return {
+        "evaluation": "Five-fold out-of-fold predictions with selected feature groups removed before fitting",
+        "results": results,
+        "interpretation": "Ablations measure predictive dependence in this dataset, not causal importance.",
     }
 
 
@@ -454,10 +581,118 @@ def generate_worked_example() -> dict[str, object]:
     return result
 
 
+def write_research_cards(metrics: dict[str, object]) -> None:
+    benchmark = metrics["model_benchmark"]
+    logistic = benchmark["models"]["Logistic Regression"]
+    subgroup_groups = metrics["subgroup_evaluation"]["groups"]
+    subgroup_rows = "\n".join(
+        f"| {name} | {values['rows']} | {values['roc_auc']:.3f} | {values['brier_score']:.3f} |"
+        for name, values in subgroup_groups.items()
+    )
+    model_card = f"""# SLCE Baseline Model Card
+
+## Model details
+- **Model:** median imputation, standardization, logistic regression
+- **Version:** generated with `python -m scripts.generate_research_figures`
+- **Training data:** UCI Cleveland Heart Disease, 303 rows
+- **Output:** binary heart-disease baseline probability used to initialize SLCE scenarios
+
+## Intended use
+Educational demonstration of transparent baseline modeling, uncertainty propagation, and constrained decision support. The probability is an input to a research simulation, not a diagnosis or treatment recommendation.
+
+## Out-of-scope use
+- Clinical diagnosis, screening, triage, or treatment selection
+- Predictions for populations not represented by the training data
+- Causal claims about lifestyle or laboratory changes
+
+## Aggregate evaluation
+Five-fold stratified out-of-fold results:
+
+| Metric | Value |
+|---|---:|
+| ROC-AUC | {logistic['roc_auc']:.3f} |
+| Accuracy | {logistic['accuracy']:.3f} |
+| Brier score | {logistic['brier_score']:.3f} |
+| ROC-AUC bootstrap 95% interval | {logistic['bootstrap_95pct_ci']['roc_auc'][0]:.3f}-{logistic['bootstrap_95pct_ci']['roc_auc'][1]:.3f} |
+
+## Subgroup evaluation
+These slices reuse shared out-of-fold predictions. Small samples make differences descriptive, not proof of fairness.
+
+| Slice | Rows | ROC-AUC | Brier score |
+|---|---:|---:|---:|
+{subgroup_rows}
+
+## Inputs and provenance
+The app records whether each model feature is observed, proxy-derived, or median-imputed. Measured systolic blood pressure, total cholesterol, and fasting glucose can replace corresponding proxy/imputed fields. HbA1c and BMI remain context-only because this classifier was not trained with them.
+
+## Limitations and risks
+- Training ages span 29-77; teen outputs are out-of-distribution.
+- The dataset is small, historical, single-center data and lacks broad demographic metadata.
+- Many clinical fields are not available from the consumer form and require imputation.
+- Calibration and subgroup estimates have substantial sampling uncertainty.
+- The stochastic layer contains transparent assumptions, not learned treatment effects.
+
+## Monitoring and reproducibility
+- CI runs unit and Streamlit smoke tests.
+- `reports/research_metrics.json` stores machine-readable evaluation output.
+- `reports/figures/subgroup_performance.png` and `reports/figures/missing_feature_ablation.png` expose slice and missingness behavior.
+"""
+    MODEL_CARD_PATH.write_text(model_card, encoding="utf-8")
+
+    coverage = metrics["nhanes"]["coverage_percent"]
+    coverage_rows = "\n".join(
+        f"| {field} | {value:.1f}% |" for field, value in coverage.items()
+    )
+    data_card = f"""# SLCE Data Card
+
+## Dataset roles
+
+### UCI Cleveland Heart Disease
+- **Role:** supervised binary baseline model
+- **Rows:** 303
+- **License:** CC BY 4.0
+- **Local artifact:** `data/heart.csv`
+- **DOI:** `10.24432/C52P4X`
+
+### CDC NHANES 2017-2018
+- **Role:** survey-weighted population context for lifestyle and laboratory measurements
+- **Processed rows:** {metrics['nhanes']['rows']:,}
+- **Local artifact:** `data/nhanes_lifestyle_biomarkers.csv`
+- **Source:** [CDC/NCHS NHANES 2017-2018](https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2017)
+
+The datasets are not row-concatenated because they contain different participants, schemas, sampling designs, and outcomes.
+
+## NHANES measurement coverage
+| Field | Non-missing coverage |
+|---|---:|
+{coverage_rows}
+
+Fasting glucose is collected in a subsample, so its lower coverage is expected. SLCE retains survey weights, strata, and PSU columns; in-app percentiles use positive examination weights, while full design-based variance estimation remains future work.
+
+## Processing
+- Official CDC XPT files are merged on `SEQN`.
+- Physiologically impossible values are set missing using explicit bounds.
+- Adult activity days use the maximum of vigorous/moderate recreation days to avoid double-counting unknown overlap.
+- The processed extract can be rebuilt with `python -m src.nhanes_dataset --build`.
+
+## Missingness and quality risks
+- Laboratory eligibility, fasting subsampling, and nonresponse vary by measurement and participant characteristics.
+- UCI missing model fields use fold-local medians during evaluation and training medians at inference.
+- User-uploaded lab CSVs are validated for one-row structure, units, numeric type, and bounded ranges.
+- No names or personal identifiers are required or retained by the import format.
+
+## Responsible use
+NHANES percentiles describe position in an age/sex reference sample and are not clinical thresholds. See the [CDC laboratory overview](https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/overviewlab.aspx?BeginYear=2017) for collection, quality-control, subsampling, and analytic guidance.
+"""
+    DATA_CARD_PATH.write_text(data_card, encoding="utf-8")
+
+
 def main() -> int:
     metrics = {
         "baseline": generate_baseline_evaluation(),
         "model_benchmark": generate_model_benchmark(),
+        "subgroup_evaluation": generate_subgroup_evaluation(),
+        "missing_feature_ablation": generate_missing_feature_ablation(),
         "nhanes": generate_nhanes_coverage(),
         "monte_carlo_convergence": generate_monte_carlo_convergence(),
         "scenario_sensitivity": generate_scenario_sensitivity(),
@@ -465,6 +700,7 @@ def main() -> int:
     }
     METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
     METRICS_PATH.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+    write_research_cards(metrics)
     print(f"Generated figures in {FIGURE_DIR}")
     print(f"Saved metrics to {METRICS_PATH}")
     return 0

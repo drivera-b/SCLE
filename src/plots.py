@@ -72,7 +72,7 @@ def tradeoff_scatter(
             for c in top:
                 ax.annotate(
                     c.get("name", c.get("id", "")),
-                    (c["time_cost_minutes_per_day"], c["expected_mean_risk"]),
+                    (c["time_cost_minutes_per_day"], c[y_field]),
                     textcoords="offset points",
                     xytext=(5, 5),
                     fontsize=8,

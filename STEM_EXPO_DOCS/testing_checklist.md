@@ -32,7 +32,20 @@
 - Run simulation.
 - Expected: Input Evidence Score is high, NHANES percentile context appears, and Research Mode shows observed/proxy/imputed feature provenance.
 
-6. Out-of-distribution transparency
+6. Lab CSV validation
+- Download the lab CSV template and upload it unchanged.
+- Expected: five validated values populate the measured-biomarker controls.
+- Change the glucose unit to `mmol/L` and upload again.
+- Expected: friendly error requiring `mg/dL`; app remains usable.
+- Add a second row and upload again.
+- Expected: file is rejected because imports must contain exactly one person.
+
+7. Research PDF
+- Run the measured adult profile and click `Export Research PDF`.
+- Expected: the saved PDF contains a summary page, uncertainty chart, and risk histogram.
+- Run Optimize Plan, export again, and confirm the tradeoff plot appears as an additional page.
+
+8. Out-of-distribution transparency
 - Load `Balanced Student`.
 - Run simulation.
 - Expected: Input Evidence panel explains that age is outside the UCI training range rather than hiding the limitation.

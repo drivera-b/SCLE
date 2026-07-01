@@ -331,6 +331,36 @@ def predict_baseline_risk(profile: dict[str, Any]) -> dict[str, Any]:
         return fallback
 
 
+def compare_biomarker_impact(
+    profile: dict[str, Any],
+    *,
+    measured_output: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Compare measured labs with the same profile using proxy/imputed lab features."""
+    if not bool(profile.get("use_biomarkers", False)):
+        return None
+    measured = measured_output or predict_baseline_risk(profile)
+    proxy_profile = dict(profile)
+    proxy_profile["use_biomarkers"] = False
+    proxy = predict_baseline_risk(proxy_profile)
+    measured_probability = float(measured["probability"])
+    proxy_probability = float(proxy["probability"])
+    provenance = measured.get("feature_provenance", {})
+    return {
+        "measured_probability": measured_probability,
+        "proxy_probability": proxy_probability,
+        "absolute_difference": measured_probability - proxy_probability,
+        "observed_model_features": provenance.get("observed", []),
+        "context_only_fields": [
+            field for field in ("hba1c", "bmi") if profile.get(field) not in (None, "")
+        ],
+        "interpretation": (
+            "Difference caused by replacing proxy/imputed model inputs with supplied measurements; "
+            "not a causal effect or a diagnosis."
+        ),
+    }
+
+
 def _print_metrics(metadata: dict[str, Any] | None) -> None:
     if not metadata:
         print("No metadata available.")

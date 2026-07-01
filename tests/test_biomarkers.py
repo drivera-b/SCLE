@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
+import src.baseline_model as baseline_model
 from src.baseline_model import MODEL_FEATURES, _profile_to_model_row
 from src.biomarkers import input_evidence_summary, population_percentile_context
 from src.nhanes_dataset import default_output_path
@@ -84,3 +86,20 @@ def test_bundled_nhanes_extract_has_research_columns():
 
     assert len(frame) > 5000
     assert expected.issubset(frame.columns)
+
+
+def test_biomarker_impact_compares_same_profile_without_measurements(monkeypatch):
+    def fake_predict(profile):
+        probability = 0.22 if profile.get("use_biomarkers") else 0.30
+        return {"probability": probability, "feature_provenance": {"observed": ["trestbps", "chol"]}}
+
+    monkeypatch.setattr(baseline_model, "predict_baseline_risk", fake_predict)
+    measured_output = fake_predict(_profile(measured=True))
+    impact = baseline_model.compare_biomarker_impact(
+        _profile(measured=True), measured_output=measured_output
+    )
+
+    assert impact is not None
+    assert impact["absolute_difference"] == pytest.approx(-0.08)
+    assert impact["observed_model_features"] == ["trestbps", "chol"]
+    assert impact["context_only_fields"] == ["hba1c", "bmi"]

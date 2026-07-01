@@ -47,6 +47,145 @@
     },
     "selection_note": "Logistic regression remains the production baseline for interpretability and stable probability behavior; nonlinear models are reported as benchmarks rather than silently substituted."
   },
+  "subgroup_evaluation": {
+    "evaluation": "Shared five-fold out-of-fold predictions, sliced after prediction",
+    "groups": {
+      "Sex: Female": {
+        "rows": 97,
+        "positive_rows": 25,
+        "prevalence": 0.25773195876288657,
+        "accuracy": 0.8865979381443299,
+        "brier_score": 0.08705747366290473,
+        "mean_predicted_probability": 0.26614932152944787,
+        "calibration_gap": 0.008417362766561298,
+        "roc_auc": 0.9088888888888889,
+        "roc_auc_bootstrap_95pct_ci": [
+          0.8326787525354968,
+          0.968036744257905
+        ]
+      },
+      "Sex: Male": {
+        "rows": 206,
+        "positive_rows": 114,
+        "prevalence": 0.5533980582524272,
+        "accuracy": 0.8058252427184466,
+        "brier_score": 0.13448526226928148,
+        "mean_predicted_probability": 0.5540277560654154,
+        "calibration_gap": 0.0006296978129882724,
+        "roc_auc": 0.889206712433257,
+        "roc_auc_bootstrap_95pct_ci": [
+          0.8403044883851132,
+          0.9271941016325758
+        ]
+      },
+      "Age: 29-49": {
+        "rows": 87,
+        "positive_rows": 26,
+        "prevalence": 0.2988505747126437,
+        "accuracy": 0.8620689655172413,
+        "brier_score": 0.09275084372757329,
+        "mean_predicted_probability": 0.3009080660577503,
+        "calibration_gap": 0.002057491345106577,
+        "roc_auc": 0.9325346784363178,
+        "roc_auc_bootstrap_95pct_ci": [
+          0.8643088044184536,
+          0.9786942263637178
+        ]
+      },
+      "Age: 50-59": {
+        "rows": 125,
+        "positive_rows": 60,
+        "prevalence": 0.48,
+        "accuracy": 0.8,
+        "brier_score": 0.13070808227602584,
+        "mean_predicted_probability": 0.4938131563292517,
+        "calibration_gap": 0.01381315632925173,
+        "roc_auc": 0.9005128205128206,
+        "roc_auc_bootstrap_95pct_ci": [
+          0.8479915777399731,
+          0.9535632359351063
+        ]
+      },
+      "Age: 60-77": {
+        "rows": 91,
+        "positive_rows": 53,
+        "prevalence": 0.5824175824175825,
+        "accuracy": 0.8461538461538461,
+        "brier_score": 0.12901873938430367,
+        "mean_predicted_probability": 0.5718742379082559,
+        "calibration_gap": -0.010543344509326591,
+        "roc_auc": 0.8823237338629593,
+        "roc_auc_bootstrap_95pct_ci": [
+          0.800968137254902,
+          0.9482371794871794
+        ]
+      }
+    },
+    "warning": "Subgroup sample sizes are small; differences are descriptive and not evidence of fairness or transportability."
+  },
+  "missing_feature_ablation": {
+    "evaluation": "Five-fold out-of-fold predictions with selected feature groups removed before fitting",
+    "results": {
+      "Full feature set": {
+        "removed_features": [],
+        "roc_auc": 0.9084927180207054,
+        "accuracy": 0.8316831683168316,
+        "brier_score": 0.11930210882103545,
+        "roc_auc_change": 0.0,
+        "brier_score_change": 0.0
+      },
+      "No BP/cholesterol/glucose": {
+        "removed_features": [
+          "trestbps",
+          "chol",
+          "fbs"
+        ],
+        "roc_auc": 0.90406211616073,
+        "accuracy": 0.8481848184818482,
+        "brier_score": 0.11977937393145158,
+        "roc_auc_change": -0.004430601859975458,
+        "brier_score_change": 0.0004772651104161252
+      },
+      "No age/sex": {
+        "removed_features": [
+          "age",
+          "sex"
+        ],
+        "roc_auc": 0.9005527285488681,
+        "accuracy": 0.8250825082508251,
+        "brier_score": 0.12282597216256115,
+        "roc_auc_change": -0.007939989471837272,
+        "brier_score_change": 0.0035238633415256987
+      },
+      "No exercise-test signals": {
+        "removed_features": [
+          "thalach",
+          "exang",
+          "oldpeak"
+        ],
+        "roc_auc": 0.899368310229865,
+        "accuracy": 0.8382838283828383,
+        "brier_score": 0.12464419594219459,
+        "roc_auc_change": -0.00912440779084045,
+        "brier_score_change": 0.005342087121159134
+      },
+      "No diagnostic categories": {
+        "removed_features": [
+          "cp",
+          "restecg",
+          "slope",
+          "ca",
+          "thal"
+        ],
+        "roc_auc": 0.8486137918933145,
+        "accuracy": 0.7788778877887789,
+        "brier_score": 0.15703089758673175,
+        "roc_auc_change": -0.059878926127390875,
+        "brier_score_change": 0.0377287887656963
+      }
+    },
+    "interpretation": "Ablations measure predictive dependence in this dataset, not causal importance."
+  },
   "nhanes": {
     "rows": 6161,
     "coverage_percent": {

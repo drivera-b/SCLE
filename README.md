@@ -21,9 +21,11 @@ Most wellness dashboards report a single score. SLCE treats the decision as an u
 ## 60-Second Product Tour
 
 - **Dashboard:** choose a demo profile or enter lifestyle and optional lab values, then run 500-5,000 Monte Carlo paths.
+- **Lab workflow:** upload a validated one-row CSV, compare measured inputs with proxy/imputed inputs, and view survey-weighted NHANES context.
 - **Decision support:** inspect baseline risk, uncertainty bands, the SLCE Score, sensitivity-ranked levers, and plain-English takeaways.
 - **Optimize Plan:** evaluate up to 90 screened candidate strategies with common random numbers and view the risk/time Pareto tradeoff.
 - **Weekly Log:** enter seven days of observations and update bounded personalization weights.
+- **Research export:** generate a multi-page PDF with inputs, evidence coverage, lab impact, uncertainty charts, and optimizer tradeoffs.
 - **Research Mode:** inspect equations, model parameters, feature provenance, assumptions, and evidence coverage.
 
 ## System Architecture
@@ -88,6 +90,16 @@ The sensitivity analysis changes one input at a time while holding the model see
 
 Across five seeds, the standard deviation of the expected-risk estimate falls from about `0.0031` at 100 paths to `0.00024` at 2,000 paths.
 
+### Subgroup and missing-feature evaluation
+
+![Out-of-fold subgroup performance](reports/figures/subgroup_performance.png)
+
+Sex and age slices reuse shared out-of-fold predictions. They reveal performance variation but remain descriptive because each subgroup is small.
+
+![Missing-feature group ablation](reports/figures/missing_feature_ablation.png)
+
+Removing BP, cholesterol, and glucose changes ROC-AUC by about `-0.004`; removing diagnostic feature categories changes it by about `-0.060`. This makes the consumer-input limitation explicit rather than hiding it.
+
 ### Data coverage
 
 ![NHANES measurement coverage](reports/figures/nhanes_measurement_coverage.png)
@@ -96,6 +108,7 @@ Across five seeds, the standard deviation of the expected-risk estimate falls fr
 - `data/nhanes_lifestyle_biomarkers.csv`: CDC NHANES 2017-2018 extract, 6,161 records.
 - `data/demo_sample.csv`: offline fallback for first-run reliability.
 - `models/baseline_model.joblib`: bundled pretrained artifact with JSON metadata.
+- `data/lab_results_template.csv`: one-person lab import template with explicit standard units.
 
 ## Modeling Details
 
@@ -118,6 +131,8 @@ Optimizer objective:
 - HbA1c and BMI are used for NHANES context only, not assigned unsupported classifier coefficients.
 
 See [`research/methodology.md`](research/methodology.md) and [`research/assumptions_and_limitations.md`](research/assumptions_and_limitations.md).
+
+Formal documentation: [`research/model_card.md`](research/model_card.md) and [`research/data_card.md`](research/data_card.md).
 
 ## Run Locally
 
@@ -177,6 +192,7 @@ python -m src.nhanes_dataset --build
 - Validation and clamping cover every user-facing numeric input.
 - User-facing model and simulation failures are caught and displayed without stack traces.
 - Experiment CSV logs and exported PNG charts support auditability and expo documentation.
+- A one-click research PDF packages the current run for judges, logbooks, and interviews.
 - GitHub Actions runs the automated tests and verifies model loading on every push.
 
 ## Known Limitations
@@ -194,6 +210,8 @@ python -m src.nhanes_dataset --build
 - `scripts/`: reproducible research-output generation.
 - `tests/`: unit and Streamlit smoke tests.
 - `research/`: methodology and limitations.
+- `research/model_card.md`: intended use, subgroup metrics, risks, and reproducibility.
+- `research/data_card.md`: dataset roles, coverage, missingness, processing, and responsible use.
 - `reports/`: screenshots, figures, metrics, and worked example.
 - `STEM_EXPO_DOCS/`: demo runbook, testing checklist, logbook, tri-fold layout, and provenance.
 
