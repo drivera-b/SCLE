@@ -70,6 +70,24 @@ def validate_dashboard_inputs(raw: dict[str, Any]) -> ValidationResult:
         if value is not None:
             values[name] = value
 
+    use_biomarkers = bool(raw.get("use_biomarkers", False))
+    values["use_biomarkers"] = use_biomarkers
+    optional_biomarkers: list[tuple[str, float, float]] = [
+        ("systolic_bp", 70, 250),
+        ("total_cholesterol", 80, 500),
+        ("fasting_glucose", 40, 400),
+        ("hba1c", 3.0, 20.0),
+        ("bmi", 10.0, 70.0),
+    ]
+    for name, min_v, max_v in optional_biomarkers:
+        raw_value = raw.get(name)
+        if raw_value in (None, ""):
+            values[name] = None
+            continue
+        value, field_errors = _validate_range(raw_value, name, min_v, max_v)
+        errors.extend(field_errors)
+        values[name] = value
+
     sex_raw = raw.get("sex", "Unknown")
     if sex_raw in ("Female", "Male", "Unknown", "Other"):
         values["sex"] = sex_raw
@@ -163,4 +181,3 @@ def sex_to_numeric(sex: str | int | float) -> int:
     if sex_norm in {"m", "male"}:
         return 1
     return 0
-

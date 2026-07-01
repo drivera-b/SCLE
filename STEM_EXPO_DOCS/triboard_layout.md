@@ -20,9 +20,11 @@
 - Real life is uncertain, so a single prediction is not enough.
 
 ### Dataset + Baseline ML (Layer 1)
-- UCI Heart Disease dataset (or equivalent)
+- UCI Heart Disease dataset for supervised baseline classification
+- CDC NHANES 2017-2018 extract for lifestyle/biomarker population context
 - Logistic regression + standardization
 - Metrics: accuracy, ROC-AUC, confusion matrix
+- Feature provenance: observed vs proxy-derived vs median-imputed inputs
 
 ### Stochastic Model (Layer 2)
 - Latent health state `H_t` in `[0,100]`
@@ -37,6 +39,11 @@
 ### Personalization
 - Weekly logs update sensitivity weights
 - “Your model adapted because...” explanation
+
+### Objective Biomarkers
+- Optional measured blood pressure, cholesterol, glucose, HbA1c, and BMI
+- Survey-weighted NHANES percentile context
+- Input Evidence Score communicates data coverage and model applicability
 
 ### Real-World Impact / Limitations
 - Educational decision-support tool

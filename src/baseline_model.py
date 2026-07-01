@@ -154,6 +154,13 @@ def train_baseline_model(
     }
 
     medians = {feature: float(df[feature].median(skipna=True)) for feature in MODEL_FEATURES}
+    feature_ranges = {
+        feature: {
+            "min": float(df[feature].min(skipna=True)),
+            "max": float(df[feature].max(skipna=True)),
+        }
+        for feature in MODEL_FEATURES
+    }
     metadata = {
         "project": "SLCE",
         "model_type": "logistic_regression",
@@ -162,6 +169,7 @@ def train_baseline_model(
         "trained_at_utc": datetime.now(timezone.utc).isoformat(),
         "dataset_source": source_info,
         "feature_medians": medians,
+        "feature_ranges": feature_ranges,
     }
 
     joblib.dump(pipeline, model_path())
@@ -206,9 +214,14 @@ def _estimated_thalach_from_resting_hr(age: float, resting_hr: float) -> float:
     return float(np.clip(est, 80.0, 205.0))
 
 
-def _profile_to_model_row(profile: dict[str, Any], metadata: dict[str, Any] | None) -> pd.DataFrame:
+def _profile_to_model_row(
+    profile: dict[str, Any],
+    metadata: dict[str, Any] | None,
+) -> tuple[pd.DataFrame, dict[str, list[str]]]:
     medians = dict((metadata or {}).get("feature_medians", {}))
     row = {feature: float(medians.get(feature, 0.0)) for feature in MODEL_FEATURES}
+    observed: set[str] = set()
+    proxy: set[str] = set()
 
     age = float(profile.get("age", 18))
     sex = sex_to_numeric(profile.get("sex", "Unknown"))
@@ -218,18 +231,49 @@ def _profile_to_model_row(profile: dict[str, Any], metadata: dict[str, Any] | No
 
     row["age"] = age
     row["sex"] = float(sex)
+    observed.add("age")
+    if str(profile.get("sex", "Unknown")) in {"Male", "Female"}:
+        observed.add("sex")
+    else:
+        proxy.add("sex")
     row["thalach"] = _estimated_thalach_from_resting_hr(age, resting_hr)
+    proxy.add("thalach")
 
-    # Optional gentle proxy adjustments so the baseline reacts slightly to available lifestyle inputs.
-    if "trestbps" in row:
+    use_biomarkers = bool(profile.get("use_biomarkers", False))
+    systolic_bp = profile.get("systolic_bp")
+    total_cholesterol = profile.get("total_cholesterol")
+    fasting_glucose = profile.get("fasting_glucose")
+
+    if use_biomarkers and systolic_bp is not None:
+        row["trestbps"] = float(np.clip(float(systolic_bp), 70.0, 250.0))
+        observed.add("trestbps")
+    elif "trestbps" in row:
         row["trestbps"] = float(np.clip(row["trestbps"] + 1.8 * (stress_score - 5.0), 80.0, 220.0))
-    if "chol" in row:
+        proxy.add("trestbps")
+
+    if use_biomarkers and total_cholesterol is not None:
+        row["chol"] = float(np.clip(float(total_cholesterol), 80.0, 500.0))
+        observed.add("chol")
+    elif "chol" in row:
         nutrition_score = float(profile.get("nutrition_score", 6))
         row["chol"] = float(np.clip(row["chol"] - 3.5 * (nutrition_score - 6.0), 100.0, 450.0))
+        proxy.add("chol")
+
+    if use_biomarkers and fasting_glucose is not None:
+        row["fbs"] = 1.0 if float(fasting_glucose) > 120.0 else 0.0
+        observed.add("fbs")
+
     if "oldpeak" in row:
         row["oldpeak"] = float(np.clip(row["oldpeak"] + 0.08 * max(0.0, 2.0 - exercise_days), 0.0, 6.5))
+        proxy.add("oldpeak")
 
-    return pd.DataFrame([row], columns=MODEL_FEATURES)
+    imputed = set(MODEL_FEATURES) - observed - proxy
+    provenance = {
+        "observed": sorted(observed),
+        "proxy_derived": sorted(proxy),
+        "imputed_from_training_median": sorted(imputed),
+    }
+    return pd.DataFrame([row], columns=MODEL_FEATURES), provenance
 
 
 def heuristic_baseline_risk(profile: dict[str, Any]) -> dict[str, Any]:
@@ -268,7 +312,7 @@ def predict_baseline_risk(profile: dict[str, Any]) -> dict[str, Any]:
         return heuristic_baseline_risk(profile)
 
     try:
-        row = _profile_to_model_row(profile, metadata)
+        row, provenance = _profile_to_model_row(profile, metadata)
         prob = float(pipeline.predict_proba(row)[:, 1][0])
         return {
             "probability": prob,
@@ -276,6 +320,7 @@ def predict_baseline_risk(profile: dict[str, Any]) -> dict[str, Any]:
             "source": "trained_model",
             "model_loaded": True,
             "metadata": metadata,
+            "feature_provenance": provenance,
         }
     except Exception as exc:
         fallback = heuristic_baseline_risk(profile)

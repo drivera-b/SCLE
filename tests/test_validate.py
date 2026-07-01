@@ -44,6 +44,34 @@ def test_validate_dashboard_inputs_rejects_out_of_range():
     assert any("horizon_years" in e for e in result.errors)
 
 
+def test_validate_dashboard_inputs_handles_optional_biomarkers():
+    result = validate_dashboard_inputs(
+        {
+            "age": 45,
+            "sex": "Male",
+            "resting_hr": 70,
+            "sleep_mean_hours": 7.5,
+            "sleep_variability_hours": 0.8,
+            "exercise_days_per_week": 3,
+            "stress_score": 5,
+            "nutrition_score": 7,
+            "time_budget_minutes_per_day": 45,
+            "horizon_years": 1,
+            "simulation_count": 1000,
+            "use_biomarkers": True,
+            "systolic_bp": 128,
+            "total_cholesterol": 190,
+            "fasting_glucose": 95,
+            "hba1c": 5.4,
+            "bmi": 24.2,
+        }
+    )
+
+    assert result.ok
+    assert result.values["use_biomarkers"] is True
+    assert result.values["systolic_bp"] == 128.0
+
+
 def test_validate_weekly_log_requires_seven_days():
     result = validate_weekly_log(
         sleep_hours=[7] * 6,
@@ -52,4 +80,3 @@ def test_validate_weekly_log_requires_seven_days():
     )
     assert not result.ok
     assert any("exactly 7 entries" in e for e in result.errors)
-

@@ -1,0 +1,49 @@
+{
+  "dataset": "NHANES 2017-2018 lifestyle and biomarker research extract",
+  "source": "CDC/NCHS NHANES",
+  "cycle": "2017-2018",
+  "built_at_utc": "2026-07-01T22:14:12.022084+00:00",
+  "rows": 6161,
+  "columns": [
+    "participant_id",
+    "age",
+    "sex",
+    "survey_weight",
+    "survey_psu",
+    "survey_stratum",
+    "sleep_mean_hours",
+    "sleep_variability_hours",
+    "exercise_days_per_week",
+    "exercise_minutes_per_week",
+    "sedentary_minutes_per_day",
+    "resting_hr",
+    "systolic_bp",
+    "diastolic_bp",
+    "bmi",
+    "total_cholesterol",
+    "hdl_cholesterol",
+    "hba1c",
+    "fasting_glucose",
+    "available_measurement_count"
+  ],
+  "source_files": {
+    "DEMO_J": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/DEMO_J.XPT",
+    "SLQ_J": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/SLQ_J.XPT",
+    "PAQ_J": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/PAQ_J.XPT",
+    "PAQY_J": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/PAQY_J.XPT",
+    "BPX_J": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/BPX_J.XPT",
+    "BMX_J": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/BMX_J.XPT",
+    "TCHOL_J": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/TCHOL_J.XPT",
+    "HDL_J": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/HDL_J.XPT",
+    "GHB_J": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/GHB_J.XPT",
+    "GLU_J": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/GLU_J.XPT"
+  },
+  "merge_key": "SEQN (exported as participant_id)",
+  "minimum_age": 16,
+  "notes": [
+    "Survey weights, PSU, and strata are retained for research analyses.",
+    "Adult exercise days use the maximum of reported vigorous/moderate recreation days to avoid double-counting unknown overlap.",
+    "Youth exercise minutes approximate each active day as 60 minutes.",
+    "This extract is for research and population-percentile context, not diagnosis."
+  ]
+}

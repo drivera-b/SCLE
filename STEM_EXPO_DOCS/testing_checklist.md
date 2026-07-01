@@ -26,6 +26,17 @@
 - Run simulation.
 - Expected: app shows fallback/auto-train note and still computes results.
 
+5. Measured biomarker workflow
+- Load `Measured Adult Research Profile`.
+- Confirm measured systolic BP, cholesterol, and glucose are enabled.
+- Run simulation.
+- Expected: Input Evidence Score is high, NHANES percentile context appears, and Research Mode shows observed/proxy/imputed feature provenance.
+
+6. Out-of-distribution transparency
+- Load `Balanced Student`.
+- Run simulation.
+- Expected: Input Evidence panel explains that age is outside the UCI training range rather than hiding the limitation.
+
 ## Optimize Plan manual test cases
 1. Standard constraints
 - Use `Balanced` or current Dashboard inputs.

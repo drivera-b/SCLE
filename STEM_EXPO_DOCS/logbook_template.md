@@ -16,8 +16,10 @@
 ## Research Notes
 - Sources reviewed:
 - Key findings from health risk / behavior science:
-- Dataset selected (UCI Heart Disease or equivalent):
+- Datasets selected (UCI Heart Disease baseline + CDC NHANES research extract):
 - Why this dataset was chosen:
+- How incompatible datasets were kept separate:
+- Feature provenance / missing-data decisions:
 
 ## Design Decisions
 - Layer 1 baseline ML design:

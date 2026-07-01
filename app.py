@@ -12,6 +12,7 @@ import pandas as pd
 import streamlit as st
 
 from src.baseline_model import load_baseline_artifacts, predict_baseline_risk
+from src.biomarkers import default_reference_path, input_evidence_summary, population_percentile_context
 from src.dataset import dataset_status_message, load_heart_dataset
 from src.monte_carlo import run_monte_carlo
 from src.optimizer import optimize_habit_plans
@@ -38,6 +39,12 @@ DEMO_PROFILES: dict[str, dict[str, Any]] = {
         "time_budget_minutes_per_day": 45,
         "horizon_years": 1,
         "simulation_count": 1200,
+        "use_biomarkers": False,
+        "systolic_bp": 112.0,
+        "total_cholesterol": 165.0,
+        "fasting_glucose": 88.0,
+        "hba1c": 5.2,
+        "bmi": 22.0,
     },
     "High Stress Student": {
         "age": 18,
@@ -51,6 +58,12 @@ DEMO_PROFILES: dict[str, dict[str, Any]] = {
         "time_budget_minutes_per_day": 30,
         "horizon_years": 5,
         "simulation_count": 1500,
+        "use_biomarkers": False,
+        "systolic_bp": 132.0,
+        "total_cholesterol": 210.0,
+        "fasting_glucose": 100.0,
+        "hba1c": 5.6,
+        "bmi": 26.0,
     },
     "Inconsistent Sleeper": {
         "age": 17,
@@ -64,6 +77,31 @@ DEMO_PROFILES: dict[str, dict[str, Any]] = {
         "time_budget_minutes_per_day": 35,
         "horizon_years": 1,
         "simulation_count": 1200,
+        "use_biomarkers": False,
+        "systolic_bp": 124.0,
+        "total_cholesterol": 185.0,
+        "fasting_glucose": 92.0,
+        "hba1c": 5.3,
+        "bmi": 24.0,
+    },
+    "Measured Adult Research Profile": {
+        "age": 45,
+        "sex": "Male",
+        "resting_hr": 72,
+        "sleep_mean_hours": 6.8,
+        "sleep_variability_hours": 1.1,
+        "exercise_days_per_week": 3,
+        "stress_score": 6,
+        "nutrition_score": 6,
+        "time_budget_minutes_per_day": 40,
+        "horizon_years": 5,
+        "simulation_count": 1500,
+        "use_biomarkers": True,
+        "systolic_bp": 128.0,
+        "total_cholesterol": 198.0,
+        "fasting_glucose": 96.0,
+        "hba1c": 5.5,
+        "bmi": 25.4,
     },
 }
 
@@ -238,6 +276,12 @@ def _profile_keys() -> list[str]:
         "time_budget_minutes_per_day",
         "horizon_years",
         "simulation_count",
+        "use_biomarkers",
+        "systolic_bp",
+        "total_cholesterol",
+        "fasting_glucose",
+        "hba1c",
+        "bmi",
     ]
 
 
@@ -327,6 +371,12 @@ def _dashboard_profile_signature(profile: dict[str, Any]) -> tuple[Any, ...]:
         "exercise_days_per_week",
         "stress_score",
         "nutrition_score",
+        "use_biomarkers",
+        "systolic_bp",
+        "total_cholesterol",
+        "fasting_glucose",
+        "hba1c",
+        "bmi",
         "horizon_years",
     ]
     return tuple(profile.get(k) for k in keys)
@@ -335,6 +385,18 @@ def _dashboard_profile_signature(profile: dict[str, Any]) -> tuple[Any, ...]:
 def _run_dashboard_simulation(profile: dict[str, Any], *, seed: int = 42) -> dict[str, Any]:
     profile = _clamp_profile_values(profile)
     baseline = predict_baseline_risk(profile)
+    metadata = baseline.get("metadata") or {}
+    age_range_payload = metadata.get("feature_ranges", {}).get("age", {}) if isinstance(metadata, dict) else {}
+    age_range = (
+        float(age_range_payload.get("min", 29.0)),
+        float(age_range_payload.get("max", 77.0)),
+    )
+    evidence = input_evidence_summary(
+        profile,
+        weekly_log_count=len(st.session_state.get("log_history", [])),
+        training_age_range=age_range,
+    )
+    population_context = population_percentile_context(profile)
     simulation = run_monte_carlo(
         profile,
         baseline,
@@ -348,11 +410,13 @@ def _run_dashboard_simulation(profile: dict[str, Any], *, seed: int = 42) -> dic
         "profile": profile,
         "baseline": baseline,
         "simulation": simulation,
+        "input_evidence": evidence,
+        "population_context": population_context,
         "timestamp": datetime.now().isoformat(timespec="seconds"),
     }
     st.session_state.current_profile = profile
     st.session_state.dashboard_result = result
-    _append_experiment_log(profile, baseline, simulation)
+    _append_experiment_log(profile, baseline, simulation, evidence=evidence)
     return result
 
 
@@ -395,8 +459,13 @@ def _cached_dataset_preview() -> tuple[pd.DataFrame | None, dict[str, Any] | Non
 def _render_project_status() -> None:
     model_obj, metadata = load_baseline_artifacts()
     preview_df, preview_info = _cached_dataset_preview()
+    nhanes_path = default_reference_path()
     with st.expander("Model & Dataset Status", expanded=False):
         st.write(dataset_status_message())
+        st.write(
+            "NHANES research/reference extract loaded: "
+            + ("Yes (6,161 participants)" if nhanes_path.exists() else "No (optional pipeline can rebuild it)")
+        )
         st.write(f"Baseline model artifact loaded: {'Yes' if model_obj is not None else 'No (app will auto-fallback)'}")
         if metadata:
             metrics = metadata.get("metrics", {})
@@ -518,6 +587,60 @@ def _render_shared_inputs() -> dict[str, Any]:
             help="More paths improve stability but increase runtime.",
         )
 
+    with st.expander("Optional measured biomarkers", expanded=bool(st.session_state.get("profile_use_biomarkers", False))):
+        use_biomarkers = st.checkbox(
+            "Use measured biomarkers in the baseline model",
+            key="profile_use_biomarkers",
+            help="When enabled, measured blood pressure, cholesterol, and fasting glucose replace proxy/imputed UCI inputs.",
+        )
+        st.caption(
+            "Enter values only from an actual measurement or lab report. HbA1c and BMI are used for population-reference context, not the UCI classifier."
+        )
+        lab_col1, lab_col2, lab_col3 = st.columns(3)
+        with lab_col1:
+            systolic_bp = st.number_input(
+                "Systolic BP (mm Hg)",
+                min_value=70.0,
+                max_value=250.0,
+                step=1.0,
+                key="profile_systolic_bp",
+                help="Measured systolic blood pressure; maps directly to the UCI resting blood-pressure feature.",
+            )
+            bmi = st.number_input(
+                "BMI",
+                min_value=10.0,
+                max_value=70.0,
+                step=0.1,
+                key="profile_bmi",
+                help="Optional population-reference context; not used by the UCI baseline classifier.",
+            )
+        with lab_col2:
+            total_cholesterol = st.number_input(
+                "Total cholesterol (mg/dL)",
+                min_value=80.0,
+                max_value=500.0,
+                step=1.0,
+                key="profile_total_cholesterol",
+                help="Measured total cholesterol; maps directly to the UCI cholesterol feature.",
+            )
+            hba1c = st.number_input(
+                "HbA1c (%)",
+                min_value=3.0,
+                max_value=20.0,
+                step=0.1,
+                key="profile_hba1c",
+                help="Optional population-reference context; not used by the UCI baseline classifier.",
+            )
+        with lab_col3:
+            fasting_glucose = st.number_input(
+                "Fasting glucose (mg/dL)",
+                min_value=40.0,
+                max_value=400.0,
+                step=1.0,
+                key="profile_fasting_glucose",
+                help="Converted to the UCI fasting-blood-sugar indicator (>120 mg/dL).",
+            )
+
     return {
         "age": age,
         "sex": sex,
@@ -530,6 +653,12 @@ def _render_shared_inputs() -> dict[str, Any]:
         "time_budget_minutes_per_day": time_budget,
         "horizon_years": st.session_state.profile_horizon_years,
         "simulation_count": sim_count,
+        "use_biomarkers": use_biomarkers,
+        "systolic_bp": systolic_bp,
+        "total_cholesterol": total_cholesterol,
+        "fasting_glucose": fasting_glucose,
+        "hba1c": hba1c,
+        "bmi": bmi,
     }
 
 
@@ -545,6 +674,17 @@ def _clamp_profile_values(profile: dict[str, Any]) -> dict[str, Any]:
     clamped["time_budget_minutes_per_day"] = int(max(0, min(180, int(clamped["time_budget_minutes_per_day"]))))
     clamped["simulation_count"] = int(max(500, min(5000, int(clamped["simulation_count"]))))
     clamped["horizon_years"] = 5 if int(clamped["horizon_years"]) == 5 else 1
+    clamped["use_biomarkers"] = bool(clamped.get("use_biomarkers", False))
+    optional_ranges = {
+        "systolic_bp": (70.0, 250.0),
+        "total_cholesterol": (80.0, 500.0),
+        "fasting_glucose": (40.0, 400.0),
+        "hba1c": (3.0, 20.0),
+        "bmi": (10.0, 70.0),
+    }
+    for field, (low, high) in optional_ranges.items():
+        value = clamped.get(field)
+        clamped[field] = None if value in (None, "") else float(max(low, min(high, float(value))))
     return clamped
 
 
@@ -801,7 +941,13 @@ def _experiments_root() -> Path:
     return path
 
 
-def _append_experiment_log(profile: dict[str, Any], baseline: dict[str, Any], simulation: dict[str, Any]) -> None:
+def _append_experiment_log(
+    profile: dict[str, Any],
+    baseline: dict[str, Any],
+    simulation: dict[str, Any],
+    *,
+    evidence: dict[str, Any] | None = None,
+) -> None:
     try:
         experiments_csv = _experiments_root() / "simulation_runs.csv"
         uncertainty_range = float(simulation["risk_p95"][-1] - simulation["risk_p05"][-1])
@@ -816,10 +962,18 @@ def _append_experiment_log(profile: dict[str, Any], baseline: dict[str, Any], si
             "baseline_risk": float(baseline["probability"]),
             "projected_risk": float(simulation["expected_mean_risk"]),
             "uncertainty_range": float(round(uncertainty_range, 6)),
+            "input_evidence_score": float((evidence or {}).get("score", 0.0)),
+            "uses_measured_biomarkers": bool(profile.get("use_biomarkers", False)),
+            "systolic_bp": profile.get("systolic_bp") if profile.get("use_biomarkers") else None,
+            "total_cholesterol": profile.get("total_cholesterol") if profile.get("use_biomarkers") else None,
+            "fasting_glucose": profile.get("fasting_glucose") if profile.get("use_biomarkers") else None,
+            "hba1c": profile.get("hba1c") if profile.get("use_biomarkers") else None,
+            "bmi": profile.get("bmi") if profile.get("use_biomarkers") else None,
         }
         df = pd.DataFrame([row])
         if experiments_csv.exists():
-            df.to_csv(experiments_csv, mode="a", header=False, index=False)
+            existing = pd.read_csv(experiments_csv)
+            pd.concat([existing, df], ignore_index=True, sort=False).to_csv(experiments_csv, index=False)
         else:
             df.to_csv(experiments_csv, index=False)
     except Exception:
@@ -1076,12 +1230,56 @@ def _model_summary_payload(result: dict[str, Any]) -> dict[str, Any]:
     if isinstance(metadata, dict) and metadata.get("model_type") == "logistic_regression":
         model_type = "Logistic Regression"
 
+    evidence = result.get("input_evidence", {})
     return {
         "Dataset used": dataset_source,
         "Model type": model_type,
         "Simulation horizon": f"{int(result['profile']['horizon_years'])} year(s)",
         "Monte Carlo runs": int(result["profile"]["simulation_count"]),
+        "Input evidence": f"{float(evidence.get('score', 0.0)):.0f}/100 ({evidence.get('level', 'Unknown')})",
     }
+
+
+def _render_input_evidence(result: dict[str, Any]) -> None:
+    evidence = result.get("input_evidence") or {}
+    baseline = result.get("baseline") or {}
+    provenance = baseline.get("feature_provenance") or {}
+    population_context = result.get("population_context") or []
+
+    with st.container(border=True):
+        st.markdown("#### Input Evidence & Applicability")
+        score_col, explanation_col = st.columns([1, 3])
+        score_col.metric(
+            "Input Evidence Score",
+            f"{float(evidence.get('score', 0.0)):.0f}/100",
+            help="Measures data coverage and model applicability, not clinical or predictive certainty.",
+        )
+        explanation_col.write(
+            f"**{evidence.get('level', 'Unknown')} evidence coverage.** "
+            f"{evidence.get('disclaimer', '')}"
+        )
+        limitations = evidence.get("limitations", [])
+        if limitations:
+            explanation_col.caption("Key limitation: " + str(limitations[0]))
+
+        if population_context:
+            st.markdown("**NHANES population context**")
+            st.dataframe(pd.DataFrame(population_context), use_container_width=True, hide_index=True)
+            st.caption(
+                "Percentiles use NHANES survey weights when available and describe position within an age/sex reference sample; they are not diagnoses or treatment thresholds."
+            )
+
+        if _is_research_mode():
+            with st.expander("Feature provenance", expanded=False):
+                st.write(
+                    {
+                        "observed_model_features": provenance.get("observed", []),
+                        "proxy_derived_features": provenance.get("proxy_derived", []),
+                        "median_imputed_features": provenance.get("imputed_from_training_median", []),
+                        "evidence_strengths": evidence.get("strengths", []),
+                        "evidence_limitations": limitations,
+                    }
+                )
 
 
 def _blank_tradeoff_figure(message: str):
@@ -1221,6 +1419,8 @@ def _render_research_dashboard_details(result: dict[str, Any]) -> None:
                 "simulation_count": result["profile"]["simulation_count"],
                 "personalization_weights": st.session_state.personalization_weights,
                 "baseline_source": result["baseline"].get("source"),
+                "feature_provenance": result["baseline"].get("feature_provenance", {}),
+                "input_evidence": result.get("input_evidence", {}),
             }
         )
 
@@ -1360,6 +1560,7 @@ def _dashboard_page() -> None:
             use_container_width=True,
             hide_index=True,
         )
+        _render_input_evidence(result)
 
         baseline = result["baseline"]
         if baseline.get("note"):

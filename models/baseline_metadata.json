@@ -32,7 +32,7 @@
     "train_size": 227,
     "test_size": 76
   },
-  "trained_at_utc": "2026-05-19T01:45:30.922012+00:00",
+  "trained_at_utc": "2026-07-01T22:19:17.697267+00:00",
   "dataset_source": {
     "source": "local_heart_csv",
     "path": "/Users/danielrivera/Documents/New project/data/heart.csv"
@@ -51,5 +51,59 @@
     "slope": 2.0,
     "ca": 0.0,
     "thal": 3.0
+  },
+  "feature_ranges": {
+    "age": {
+      "min": 29.0,
+      "max": 77.0
+    },
+    "sex": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "cp": {
+      "min": 1.0,
+      "max": 4.0
+    },
+    "trestbps": {
+      "min": 94.0,
+      "max": 200.0
+    },
+    "chol": {
+      "min": 126.0,
+      "max": 564.0
+    },
+    "fbs": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "restecg": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "thalach": {
+      "min": 71.0,
+      "max": 202.0
+    },
+    "exang": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "oldpeak": {
+      "min": 0.0,
+      "max": 6.2
+    },
+    "slope": {
+      "min": 1.0,
+      "max": 3.0
+    },
+    "ca": {
+      "min": 0.0,
+      "max": 3.0
+    },
+    "thal": {
+      "min": 3.0,
+      "max": 7.0
+    }
   }
 }
