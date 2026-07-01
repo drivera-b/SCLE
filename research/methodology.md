@@ -35,9 +35,13 @@ Measured systolic blood pressure, total cholesterol, and fasting glucose map to 
 
 The latent health state is updated weekly:
 
-`H[t+1] = clamp(H[t] + drift + mean_reversion + noise, 0, 100)`
+`H[t+1] = clamp(H[t] + drift + reversion_to_start + noise, 0, 100)`
 
 Noise increases with stress and sleep variability. Monte Carlo paths produce percentile bands, threshold-crossing probabilities, and final-state distributions.
+
+Lifestyle drift uses a conservative `0.10` scale factor so repeated weekly assumptions do not overwhelm the clinical baseline over multi-year horizons. These coefficients encode directional scenarios for decision analysis; they are not estimated causal treatment effects.
+
+Week-zero simulated risk is calibrated to equal the Layer 1 baseline probability. Later risk is mapped from health-state movement relative to that individual starting point, avoiding an unexplained intercept shift between the two layers.
 
 ## Optimization
 

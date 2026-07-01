@@ -87,7 +87,7 @@ def run_monte_carlo(
             stress_score=habits["stress_score"],
         )
         noise = rng.normal(0.0, sigma, size=n_paths).astype(np.float32)
-        mean_reversion = -0.02 * (health[:, t] - 70.0)
+        mean_reversion = -0.02 * (health[:, t] - health[:, 0])
         health[:, t + 1] = clamp(health[:, t] + drift + mean_reversion + noise, 0.0, 100.0)
         risk[:, t + 1], _ = risk_from_health(health[:, t + 1], baseline_logit)
 
@@ -103,4 +103,3 @@ def run_monte_carlo(
         }
     )
     return summary
-

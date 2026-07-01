@@ -4,6 +4,7 @@ from src.stochastic_model import (
     baseline_risk_to_health,
     compute_weekly_drift,
     effective_noise_sigma,
+    risk_from_health,
     simulate_single_path,
 )
 
@@ -14,6 +15,14 @@ def test_baseline_risk_to_health_is_clamped_and_monotonic():
     assert 0 <= high <= 100
     assert 0 <= low <= 100
     assert low > high
+
+
+def test_week_zero_risk_matches_baseline_probability():
+    baseline_probability = 0.23
+    baseline_logit = np.log(baseline_probability / (1.0 - baseline_probability))
+    initial_health = baseline_risk_to_health(baseline_probability)
+    risk, _ = risk_from_health(initial_health, baseline_logit)
+    assert np.isclose(risk, baseline_probability)
 
 
 def test_drift_and_sigma_behave_reasonably():
@@ -30,10 +39,28 @@ def test_drift_and_sigma_behave_reasonably():
         nutrition_score=3,
     )
     assert good_drift > poor_drift
+    assert -0.35 <= poor_drift <= good_drift <= 0.35
 
     low_sigma = effective_noise_sigma(sleep_variability_hours=0.2, stress_score=3)
     high_sigma = effective_noise_sigma(sleep_variability_hours=2.5, stress_score=9)
     assert high_sigma > low_sigma
+
+
+def test_lifestyle_scenario_changes_are_directional_but_bounded():
+    baseline = compute_weekly_drift(
+        sleep_mean_hours=6.5,
+        exercise_days_per_week=2,
+        stress_score=7,
+        nutrition_score=5,
+    )
+    improved = compute_weekly_drift(
+        sleep_mean_hours=7.5,
+        exercise_days_per_week=4,
+        stress_score=5,
+        nutrition_score=7,
+    )
+    assert improved > baseline
+    assert improved - baseline < 0.5
 
 
 def test_simulate_single_path_returns_bounded_arrays():
@@ -51,4 +78,3 @@ def test_simulate_single_path_returns_bounded_arrays():
     assert len(risk) == 53
     assert np.all(health >= 0) and np.all(health <= 100)
     assert np.all(risk >= 0) and np.all(risk <= 1)
-

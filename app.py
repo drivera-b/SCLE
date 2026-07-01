@@ -502,7 +502,7 @@ def _render_project_status() -> None:
         if preview_info:
             st.caption(f"Preview source: {preview_info.get('source')}")
         if preview_df is not None:
-            st.dataframe(preview_df, use_container_width=True, hide_index=True)
+            st.dataframe(preview_df, width="stretch", hide_index=True)
 
 
 def _render_demo_profile_picker() -> None:
@@ -513,7 +513,7 @@ def _render_demo_profile_picker() -> None:
         index=list(DEMO_PROFILES.keys()).index(st.session_state.active_demo_profile),
         help="Prebuilt profiles for reliable STEM Expo demos.",
     )
-    if c2.button("Load Profile", use_container_width=True, type="secondary"):
+    if c2.button("Load Profile", width="stretch", type="secondary"):
         _apply_demo_profile(selected)
         st.rerun()
 
@@ -865,7 +865,7 @@ def _render_monte_carlo_animation(simulation: dict[str, Any]) -> None:
                 ax.set_xlabel("Weeks")
                 ax.set_ylabel("Risk probability")
                 ax.grid(True, alpha=0.15)
-                canvas.pyplot(fig, use_container_width=True)
+                canvas.pyplot(fig, width="stretch")
                 plt.close(fig)
                 time.sleep(0.08)
 
@@ -883,7 +883,7 @@ def _render_compare_scenarios(current_profile: dict[str, Any] | None = None) -> 
     selected_b = c2.selectbox("Scenario B", options=options, index=default_b, key="compare_b")
     compare_paths = c3.slider("Compare paths", 200, 2000, 700, 100, key="compare_paths")
 
-    if st.button("Run Comparison", key="run_scenario_compare", use_container_width=True):
+    if st.button("Run Comparison", key="run_scenario_compare", width="stretch"):
         try:
             if selected_a == selected_b:
                 st.warning("Choose two different scenarios to compare.")
@@ -952,9 +952,9 @@ def _render_compare_scenarios(current_profile: dict[str, Any] | None = None) -> 
             },
         ]
     )
-    st.dataframe(diff, use_container_width=True, hide_index=True)
+    st.dataframe(diff, width="stretch", hide_index=True)
     fig = _comparison_trend_plot(compare)
-    st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig, width="stretch")
     plt.close(fig)
 
 def _experiments_root() -> Path:
@@ -1205,13 +1205,13 @@ def _render_simulation_plots(simulation: dict[str, Any]) -> None:
 
     chart_col1, chart_col2 = st.columns(2)
     with chart_col1:
-        st.pyplot(figs["risk_fan"], use_container_width=True)
+        st.pyplot(figs["risk_fan"], width="stretch")
         if st.session_state.get("explain_mode", True):
             st.caption(
                 "Uncertainty Fan Chart: the middle line is the median simulation. The shaded band shows the likely spread of outcomes."
             )
     with chart_col2:
-        st.pyplot(figs["risk_hist"], use_container_width=True)
+        st.pyplot(figs["risk_hist"], width="stretch")
         if st.session_state.get("explain_mode", True):
             st.caption(
                 "Risk Distribution Histogram: each bar shows how many simulated futures ended in that risk range."
@@ -1220,7 +1220,7 @@ def _render_simulation_plots(simulation: dict[str, Any]) -> None:
     if _is_research_mode():
         with st.expander("Optional Technical Plot: Latent Health State Fan Chart", expanded=False):
             if "health_fan" in figs:
-                st.pyplot(figs["health_fan"], use_container_width=True)
+                st.pyplot(figs["health_fan"], width="stretch")
 
     for fig in figs.values():
         plt.close(fig)
@@ -1286,7 +1286,7 @@ def _render_input_evidence(result: dict[str, Any]) -> None:
 
         if population_context:
             st.markdown("**NHANES population context**")
-            st.dataframe(pd.DataFrame(population_context), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(population_context), width="stretch", hide_index=True)
             st.caption(
                 "Percentiles use NHANES survey weights when available and describe position within an age/sex reference sample; they are not diagnoses or treatment thresholds."
             )
@@ -1522,7 +1522,7 @@ def _dashboard_page() -> None:
         run_clicked = st.form_submit_button(
             "Run Simulation",
             type="primary",
-            use_container_width=True,
+            width="stretch",
             disabled=st.session_state.busy_dashboard,
             help="Runs the baseline model and then Monte Carlo simulation over the selected horizon.",
         )
@@ -1559,7 +1559,7 @@ def _dashboard_page() -> None:
                 st.caption("Run Info")
                 st.write(f"Horizon: {result['profile']['horizon_years']} year(s)")
                 st.write(f"Paths: {result['profile']['simulation_count']}")
-                if st.button("Export Key Charts (PNG)", use_container_width=True, key="export_key_charts"):
+                if st.button("Export Key Charts (PNG)", width="stretch", key="export_key_charts"):
                     try:
                         export_path = _export_key_charts_png(result, matched_opt)
                         st.session_state.last_export_path = str(export_path)
@@ -1568,7 +1568,7 @@ def _dashboard_page() -> None:
                             st.info("Tradeoff plot exported with placeholder text. Run Optimize Plan first for full tradeoff data.")
                     except Exception as exc:
                         st.error(f"Export failed: {exc.__class__.__name__}")
-                if st.button("Export Full Results", use_container_width=True, key="export_dashboard_results"):
+                if st.button("Export Full Results", width="stretch", key="export_dashboard_results"):
                     try:
                         export_path = _export_dashboard_results(result)
                         st.session_state.last_export_path = str(export_path)
@@ -1579,7 +1579,7 @@ def _dashboard_page() -> None:
         st.markdown("#### Model Summary")
         st.dataframe(
             pd.DataFrame([_model_summary_payload(result)]),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         _render_input_evidence(result)
@@ -1602,7 +1602,7 @@ def _dashboard_page() -> None:
                 st.write(f"- {line}")
         with insight_col2:
             radar = _radar_chart(result["profile"])
-            st.pyplot(radar, use_container_width=True)
+            st.pyplot(radar, width="stretch")
             plt.close(radar)
             if st.session_state.get("explain_mode", True):
                 st.caption("Radar chart shows estimated relative contribution of each lifestyle factor to current risk pressure.")
@@ -1706,7 +1706,7 @@ def _optimizer_page() -> None:
         optimize_clicked = st.form_submit_button(
             "Find Best Plan",
             type="primary",
-            use_container_width=True,
+            width="stretch",
             disabled=st.session_state.busy_optimizer,
             help="Runs a bounded search with Monte Carlo evaluation for each candidate plan.",
         )
@@ -1806,7 +1806,7 @@ def _optimizer_page() -> None:
                 st.write(_plan_why_text(plan, stored["profile"]))
 
                 with st.expander("Ramp schedule preview (first 8 weeks)", expanded=(plan.get("rank") == 1)):
-                    st.dataframe(pd.DataFrame(plan["schedule_preview"]), use_container_width=True, hide_index=True)
+                    st.dataframe(pd.DataFrame(plan["schedule_preview"]), width="stretch", hide_index=True)
 
         plot_row1, plot_row2 = st.columns([3, 1])
         with plot_row1:
@@ -1815,7 +1815,7 @@ def _optimizer_page() -> None:
                 top_ids=[plan["id"] for plan in result["top_plans"]],
                 y_field="expected_risk_reduction",
             )
-            st.pyplot(fig, use_container_width=True)
+            st.pyplot(fig, width="stretch")
             plt.close(fig)
             if st.session_state.get("explain_mode", True):
                 st.caption(
@@ -1825,7 +1825,7 @@ def _optimizer_page() -> None:
             with st.container(border=True):
                 st.caption("Export")
                 st.write("Save plan results and plots for your logbook.")
-                if st.button("Export Results", use_container_width=True, key="export_optimizer_results"):
+                if st.button("Export Results", width="stretch", key="export_optimizer_results"):
                     try:
                         export_path = _export_optimizer_results(stored)
                         st.session_state.last_export_path = str(export_path)
@@ -1868,7 +1868,7 @@ def _weekly_log_page() -> None:
     st.subheader("7-Day Input Form")
     edited = st.data_editor(
         st.session_state.weekly_log_editor_df,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         num_rows="fixed",
         key="weekly_log_editor",
@@ -1919,7 +1919,11 @@ def _weekly_log_page() -> None:
                 }
                 st.session_state.log_history.append(entry)
 
-                baseline_profile = st.session_state.get("current_profile", validate_dashboard_inputs(_current_profile_from_state()).values or DEMO_PROFILES["Balanced"])
+                baseline_profile = st.session_state.get(
+                    "current_profile",
+                    validate_dashboard_inputs(_current_profile_from_state()).values
+                    or DEMO_PROFILES["Balanced Student"],
+                )
                 with st.spinner("Updating personalization weights..."):
                     update = update_personalization_weights(
                         st.session_state.personalization_weights,
@@ -1950,11 +1954,11 @@ def _weekly_log_page() -> None:
                 "New": [round(update["new_weights"][k], 3) for k in update["new_weights"].keys()],
             }
         )
-        st.dataframe(comp, use_container_width=True, hide_index=True)
+        st.dataframe(comp, width="stretch", hide_index=True)
         st.info(f"Your model adapted because: {update['explanation']}")
 
     export_col1, export_col2 = st.columns([1, 3])
-    if export_col1.button("Export Results", key="export_weekly_results", use_container_width=True):
+    if export_col1.button("Export Results", key="export_weekly_results", width="stretch"):
         try:
             export_path = _export_weekly_log_snapshot()
             st.session_state.last_export_path = str(export_path)
@@ -1983,7 +1987,7 @@ def _weekly_log_page() -> None:
                 }
             )
         if rows:
-            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
     _render_research_weekly_details()
 
 

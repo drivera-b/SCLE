@@ -43,8 +43,11 @@ class PersonalizationWeights:
         return cls()
 
 
-DEFAULT_RISK_ALPHA = -2.2
 DEFAULT_RISK_BETA = 3.0
+# Lifestyle coefficients are directional assumptions, not estimated treatment effects.
+# This conservative scale keeps weekly drift from overwhelming the clinical baseline
+# when it compounds across multi-year horizons.
+LIFESTYLE_DRIFT_SCALE = 0.10
 
 
 def baseline_risk_to_health(baseline_risk: float) -> float:
@@ -56,11 +59,12 @@ def risk_from_health(
     health_state: float | np.ndarray,
     baseline_logit: float,
     *,
-    alpha: float = DEFAULT_RISK_ALPHA,
     beta: float = DEFAULT_RISK_BETA,
 ):
-    normalized_health_load = (100.0 - np.asarray(health_state)) / 100.0
-    logit = alpha + beta * normalized_health_load + float(baseline_logit)
+    baseline_probability = float(sigmoid(float(baseline_logit)))
+    reference_health = baseline_risk_to_health(baseline_probability)
+    normalized_health_change = (reference_health - np.asarray(health_state)) / 100.0
+    logit = float(baseline_logit) + beta * normalized_health_change
     return sigmoid(logit), logit
 
 
@@ -92,8 +96,9 @@ def compute_weekly_drift(
     if exercise_days_per_week == 0:
         penalty -= 0.4
 
-    drift = sleep_term + exercise_term + stress_term + nutrition_term + penalty
-    return float(clamp(drift, -3.0, 3.0))
+    raw_drift = sleep_term + exercise_term + stress_term + nutrition_term + penalty
+    drift = LIFESTYLE_DRIFT_SCALE * raw_drift
+    return float(clamp(drift, -0.35, 0.35))
 
 
 def _step_toward(current: float, target: float, max_delta: float) -> float:
@@ -204,7 +209,7 @@ def simulate_single_path(
             sleep_variability_hours=habits["sleep_variability_hours"],
             stress_score=habits["stress_score"],
         )
-        mean_reversion = -0.02 * (health[t] - 70.0)
+        mean_reversion = -0.02 * (health[t] - health[0])
         noise = rng.normal(0.0, sigma)
         health[t + 1] = float(clamp(health[t] + drift + mean_reversion + noise, 0.0, 100.0))
         risk[t + 1], _ = risk_from_health(health[t + 1], baseline_logit)
@@ -230,4 +235,3 @@ def quick_health_projection_score(
     )
     # A deterministic proxy used by personalization to compare weeks without expensive simulation.
     return float(70.0 + 4.0 * drift - 1.2 * sigma)
-

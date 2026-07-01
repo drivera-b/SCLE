@@ -1,6 +1,33 @@
+import ast
 from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
+
+
+def test_no_regular_button_is_nested_inside_streamlit_form():
+    app_path = Path(__file__).resolve().parents[1] / "app.py"
+    tree = ast.parse(app_path.read_text(encoding="utf-8"))
+
+    def is_streamlit_call(node: ast.AST, method: str) -> bool:
+        return (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "st"
+            and node.func.attr == method
+        )
+
+    violations: list[int] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.With):
+            continue
+        if not any(is_streamlit_call(item.context_expr, "form") for item in node.items):
+            continue
+        for child in ast.walk(node):
+            if is_streamlit_call(child, "button"):
+                violations.append(child.lineno)
+
+    assert not violations, f"st.button() cannot be used inside st.form(); lines: {violations}"
 
 
 def test_streamlit_app_starts_without_exceptions():

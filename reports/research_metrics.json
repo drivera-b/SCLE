@@ -2,6 +2,7 @@
   "baseline": {
     "accuracy": 0.868421052631579,
     "roc_auc": 0.9310104529616725,
+    "brier_score": 0.10312154858528022,
     "confusion_matrix": [
       [
         35,
@@ -13,6 +14,38 @@
       ]
     ],
     "test_rows": 76
+  },
+  "model_benchmark": {
+    "evaluation": "5-fold stratified out-of-fold predictions",
+    "rows": 303,
+    "models": {
+      "Logistic Regression": {
+        "accuracy": 0.8316831683168316,
+        "roc_auc": 0.9084927180207054,
+        "brier_score": 0.11930210882103545,
+        "bootstrap_95pct_ci": {
+          "accuracy": [
+            0.7887788778877888,
+            0.8712871287128713
+          ],
+          "roc_auc": [
+            0.8752612682284486,
+            0.938865030919271
+          ]
+        }
+      },
+      "Random Forest": {
+        "accuracy": 0.8382838283828383,
+        "roc_auc": 0.9122214423583085,
+        "brier_score": 0.12308191342651773
+      },
+      "Histogram Gradient Boosting": {
+        "accuracy": 0.8184818481848185,
+        "roc_auc": 0.8932268819091068,
+        "brier_score": 0.13681423926844805
+      }
+    },
+    "selection_note": "Logistic regression remains the production baseline for interpretability and stable probability behavior; nonlinear models are reported as benchmarks rather than silently substituted."
   },
   "nhanes": {
     "rows": 6161,
@@ -37,18 +70,18 @@
       2000
     ],
     "mean_estimates": [
-      0.061774341696064994,
-      0.06170627469760629,
-      0.06164306613784635,
-      0.06162903690943319,
-      0.061515278197505144
+      0.1680282319353999,
+      0.16767050328783267,
+      0.16759283812675835,
+      0.16755122373697331,
+      0.16730099617286392
     ],
     "standard_deviations": [
-      0.0014548037014390789,
-      0.00084384938484251,
-      0.00045555957588769264,
-      0.0002775778178471564,
-      0.00010631996029272183
+      0.0031011545484653626,
+      0.0018151437761894861,
+      0.0011007663818355395,
+      0.0006225006347299793,
+      0.0002383216150994104
     ],
     "seeds": [
       7,
@@ -57,5 +90,111 @@
       37,
       47
     ]
+  },
+  "scenario_sensitivity": {
+    "baseline_expected_mean_risk": 0.16719350665329763,
+    "scenario_expected_mean_risk": {
+      "Sleep +1 hour": 0.16281853716759562,
+      "Sleep variability -0.6h": 0.16631854823644057,
+      "Exercise +2 days": 0.16072771516536016,
+      "Stress -2 points": 0.15829048779316293,
+      "Nutrition +2 points": 0.1621142064984302
+    },
+    "change_from_baseline": {
+      "Sleep +1 hour": -0.004374969485702013,
+      "Sleep variability -0.6h": -0.0008749584168570579,
+      "Exercise +2 days": -0.006465791487937467,
+      "Stress -2 points": -0.008903018860134698,
+      "Nutrition +2 points": -0.005079300154867433
+    },
+    "simulation_paths": 1500,
+    "common_seed": 42,
+    "interpretation": "Scenario associations under SLCE assumptions; not causal-effect estimates."
+  },
+  "worked_example": {
+    "profile": {
+      "age": 45,
+      "sex": "Male",
+      "resting_hr": 72,
+      "sleep_mean_hours": 6.8,
+      "sleep_variability_hours": 1.1,
+      "exercise_days_per_week": 3,
+      "stress_score": 6,
+      "nutrition_score": 6,
+      "use_biomarkers": true,
+      "systolic_bp": 128.0,
+      "total_cholesterol": 198.0,
+      "fasting_glucose": 96.0,
+      "hba1c": 5.5,
+      "bmi": 25.4,
+      "time_budget_minutes_per_day": 40
+    },
+    "baseline": {
+      "probability": 0.15766994948875485,
+      "model_source": "trained_model"
+    },
+    "simulation": {
+      "horizon_years": 5,
+      "paths": 1500,
+      "expected_mean_risk": 0.1778533882401303,
+      "final_risk_mean": 0.18231562532981238,
+      "final_risk_p05": 0.13504287898540496,
+      "final_risk_p95": 0.2394572041928768,
+      "final_health_mean": 85.19276178232829
+    },
+    "optimization": {
+      "constraints": {
+        "max_minutes_per_day": 40,
+        "max_exercise_days_per_week": 6,
+        "max_sleep_increase_per_week": 0.5,
+        "max_stress_reduction_per_week": 1.0,
+        "nutrition_improvement_cap_per_week": 1.0,
+        "optimization_paths": 300
+      },
+      "candidates_evaluated": 90,
+      "baseline_expected_risk": 0.17739167413263943,
+      "top_plans": [
+        {
+          "rank": 1,
+          "name": "Balanced Momentum Strategy",
+          "target_sleep_mean": 6.8,
+          "target_exercise_days": 3.0,
+          "target_stress_score": 3.0,
+          "target_nutrition_score": 7.0,
+          "target_sleep_variability_hours": 0.1,
+          "expected_mean_risk": 0.1445390861983843,
+          "expected_risk_reduction": 0.032852587934255134,
+          "time_cost_minutes_per_day": 30.0,
+          "adherence_score": 0.8444444444444444
+        },
+        {
+          "rank": 2,
+          "name": "Transformational Reset Strategy",
+          "target_sleep_mean": 6.8,
+          "target_exercise_days": 3.0,
+          "target_stress_score": 1.0,
+          "target_nutrition_score": 6.0,
+          "target_sleep_variability_hours": 0.1,
+          "expected_mean_risk": 0.13779555556931716,
+          "expected_risk_reduction": 0.03959611856332226,
+          "time_cost_minutes_per_day": 40.0,
+          "adherence_score": 0.8055555555555556
+        },
+        {
+          "rank": 3,
+          "name": "Alternative Strategy 3",
+          "target_sleep_mean": 6.8,
+          "target_exercise_days": 3.0,
+          "target_stress_score": 2.0,
+          "target_nutrition_score": 6.0,
+          "target_sleep_variability_hours": 0.1,
+          "expected_mean_risk": 0.14252043694857208,
+          "expected_risk_reduction": 0.034871237184067344,
+          "time_cost_minutes_per_day": 32.0,
+          "adherence_score": 0.8444444444444444
+        }
+      ]
+    },
+    "interpretation": "Illustrative scenario output under SLCE assumptions; not a causal or clinical estimate."
   }
 }
