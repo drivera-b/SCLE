@@ -213,15 +213,25 @@ def _inject_styles() -> None:
           border-radius: 14px;
           padding: 0.65rem 0.75rem;
         }
-        .stButton > button {
+        div[data-testid="stMetric"] [data-testid="stMetricLabel"],
+        div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+          color: #16212f !important;
+        }
+        .stButton > button,
+        .stFormSubmitButton > button {
           border-radius: 12px;
-          border: 1px solid rgba(15,118,110,0.2);
+          border: 1px solid #0f766e;
+          background: #0f766e;
+          color: #ffffff !important;
           font-weight: 600;
           padding-top: 0.5rem;
           padding-bottom: 0.5rem;
         }
-        .stButton > button:hover {
-          border-color: rgba(15,118,110,0.35);
+        .stButton > button:hover,
+        .stFormSubmitButton > button:hover {
+          border-color: #115e59;
+          background: #115e59;
+          color: #ffffff !important;
         }
         </style>
         """,
@@ -230,6 +240,7 @@ def _inject_styles() -> None:
 
 
 def _ensure_session_state() -> None:
+    demo_query = str(st.query_params.get("demo", "")).strip().lower()
     if "personalization_weights" not in st.session_state:
         st.session_state.personalization_weights = default_weights()
     if "log_history" not in st.session_state:
@@ -249,7 +260,13 @@ def _ensure_session_state() -> None:
     if "ui_mode" not in st.session_state:
         st.session_state.ui_mode = "App Mode"
     if "demo_day_mode" not in st.session_state:
-        st.session_state.demo_day_mode = False
+        st.session_state.demo_day_mode = demo_query in {"1", "true", "yes", "research", "measured"}
+    if "demo_day_profile" not in st.session_state:
+        st.session_state.demo_day_profile = (
+            "Measured Adult Research Profile"
+            if demo_query in {"research", "measured"}
+            else "High Stress Student"
+        )
     if "demo_day_initialized" not in st.session_state:
         st.session_state.demo_day_initialized = False
     if "last_export_path" not in st.session_state:
@@ -422,7 +439,10 @@ def _run_dashboard_simulation(profile: dict[str, Any], *, seed: int = 42) -> dic
 
 def _maybe_run_demo_day_bootstrap() -> None:
     if st.session_state.demo_day_mode and not st.session_state.demo_day_initialized:
-        _apply_demo_profile("High Stress Student")
+        demo_profile = st.session_state.get("demo_day_profile", "High Stress Student")
+        if demo_profile not in DEMO_PROFILES:
+            demo_profile = "High Stress Student"
+        _apply_demo_profile(demo_profile)
         st.session_state.nav_page = "Dashboard"
         validation = validate_dashboard_inputs(_current_profile_from_state())
         if validation.ok:
@@ -430,7 +450,9 @@ def _maybe_run_demo_day_bootstrap() -> None:
                 with st.spinner("Demo Day Mode: loading profile and running simulation..."):
                     _run_dashboard_simulation(validation.values, seed=7)
                 st.session_state.demo_day_initialized = True
-                st.session_state.demo_day_message = "Demo Day Mode loaded the High Stress Student profile and pre-ran a simulation."
+                st.session_state.demo_day_message = (
+                    f"Demo Day Mode loaded the {demo_profile} profile and pre-ran a simulation."
+                )
             except Exception as exc:
                 st.session_state.demo_day_message = (
                     "Demo Day Mode could not auto-run the simulation "
